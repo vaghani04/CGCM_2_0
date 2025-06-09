@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException
 from src.app.usecases.context_gather_usecases.context_gather_helper import ContextGatherHelper
 from src.app.services.merkle_tree_service import MerkleTreeService
 from src.app.services.code_chunking_service import CodeChunkingService
-from src.app.services.redis_service import RedisService
+from src.app.services.file_storage_service import FileStorageService
 from src.app.config.database import mongodb_database
 
 class ContextGatherUseCase:
@@ -15,13 +15,12 @@ class ContextGatherUseCase:
         context_gather_helper: ContextGatherHelper = Depends(ContextGatherHelper),
         merkle_tree_service: MerkleTreeService = Depends(MerkleTreeService),
         code_chunking_service: CodeChunkingService = Depends(CodeChunkingService),
-        redis_service: RedisService = Depends(RedisService),
-        # mongodb: MongoDB = Depends(MongoDB)
+        file_storage_service: FileStorageService = Depends(FileStorageService),
     ):
         self.context_gather_helper = context_gather_helper
         self.merkle_tree_service = merkle_tree_service
         self.code_chunking_service = code_chunking_service
-        self.redis_service = redis_service
+        self.file_storage_service = file_storage_service
         self.mongodb = mongodb_database
         
     async def execute(self, codebase_path: str):
@@ -38,10 +37,10 @@ class ContextGatherUseCase:
         git_branch_name = await self.context_gather_helper.get_current_branch_name(codebase_path)
         
         if not git_branch_name:
-            git_branch_name = "no_branch"
+            git_branch_name = "default"
             
-        # Create Redis key for the merkle tree
-        redis_key = f"{git_branch_name}:{codebase_path}"
+        # Create storage key for the merkle tree
+        storage_key = f"{git_branch_name}:{codebase_path}"
         
         # Initialize statistics
         stats = {
@@ -57,7 +56,7 @@ class ContextGatherUseCase:
         current_tree, current_file_hashes = self.merkle_tree_service.build_merkle_tree(codebase_path)
         
         # Check if we have a previous merkle tree
-        previous_data = self.redis_service.get_merkle_tree(redis_key)
+        previous_data = self.file_storage_service.get_merkle_tree(storage_key)
         
         # Files that need processing
         files_to_process = []
@@ -79,9 +78,10 @@ class ContextGatherUseCase:
                 os.path.join(codebase_path, file_path) 
                 for file_path in current_file_hashes.keys()
             ]
+            stats["changed_files"] = list(current_file_hashes.keys())
             
         # Store the current merkle tree
-        #self.redis_service.store_merkle_tree(redis_key, current_tree, current_file_hashes)
+        self.file_storage_service.store_merkle_tree(storage_key, current_tree, current_file_hashes)
         
         stats["total_files_processed"] = len(files_to_process)
         

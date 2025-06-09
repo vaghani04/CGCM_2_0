@@ -6,4 +6,3 @@ uvicorn
 fastapi
 pydantic-settings
 motor
-redis
