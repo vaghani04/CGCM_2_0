@@ -1,8 +1,9 @@
 import os
 import hashlib
-from typing import List, Dict, Any
+from typing import List, Dict
 from fastapi import Depends
 from chonkie import CodeChunker
+from src.app.utils.hash_calculator import calculate_hash
 
 class CodeChunkingService:
     def __init__(self):
@@ -142,7 +143,7 @@ class CodeChunkingService:
             result_chunks = []
             for chunk in chunks:
                 # Calculate hash for the chunk content
-                chunk_hash = hashlib.sha256(chunk.text.encode('utf-8')).hexdigest()
+                chunk_hash = calculate_hash(chunk.text)
                 
                 # Calculate line numbers
                 start_line, end_line = self.calculate_line_numbers(

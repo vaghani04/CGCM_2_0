@@ -1,6 +1,7 @@
 import os
 import hashlib
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Tuple, Optional
+from src.app.utils.hash_calculator import calculate_hash
 
 class MerkleNode:
     """Node in the Merkle Tree"""
@@ -168,7 +169,7 @@ class MerkleTreeService:
                     with open(file_path, 'rb') as f:
                         content = f.read()
                         # Calculate hash of the file content
-                        file_hash = hashlib.sha256(content).digest()
+                        file_hash = calculate_hash(content)
                         file_hashes[relative_path] = file_hash
                 except (IOError, OSError) as e:
                     # Skip files that cannot be read, with more specific error handling
