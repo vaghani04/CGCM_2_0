@@ -65,6 +65,111 @@ class MerkleTreeService:
         self.previous_trees = {}
         self.previous_file_hashes = {}
         
+    # def build_merkle_tree(self, codebase_path: str) -> Tuple[MerkleTree, Dict[str, bytes]]:
+    #     """
+    #     Build a merkle tree from the codebase
+        
+    #     Args:
+    #         codebase_path: Path to the codebase
+            
+    #     Returns:
+    #         Tuple containing the merkle tree and a mapping of file paths to hashes
+    #     """
+    #     file_hashes = {}
+        
+    #     # Only include these file types
+    #     include_extensions = [
+    #         '.py',     # Python
+    #         '.js',     # JavaScript
+    #         '.jsx',    # React JSX
+    #         '.ts',     # TypeScript
+    #         '.tsx',    # TypeScript React
+    #     ]
+        
+    #     # Explicitly exclude these file types (binary/media files)
+    #     exclude_extensions = [
+    #         '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico', '.svg',  # Images
+    #         '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', # Documents
+    #         '.zip', '.tar', '.gz', '.rar', '.7z',  # Archives
+    #         '.exe', '.dll', '.so', '.dylib',  # Binaries
+    #         '.mp3', '.mp4', '.wav', '.avi', '.mov',  # Media
+    #         '.ttf', '.otf', '.woff', '.woff2',  # Fonts
+    #         '.pyc', '.pyo', '.pyd',  # Python bytecode
+    #     ]
+        
+    #     # Directories to ignore
+    #     ignore_dirs = [
+    #         '.git',
+    #         '.venv',
+    #         'env',
+    #         'venv',
+    #         'node_modules',
+    #         '__pycache__',
+    #         '.idea',
+    #         '.vscode',
+    #         'dist',
+    #         'build',
+    #         '.pytest_cache',
+    #         '.mypy_cache',
+    #         'vendor',
+    #         'tmp',
+    #         '.dart_tool',
+    #         'media',
+    #         'static',
+    #         'assets',
+    #         'images',
+    #     ]
+        
+    #     # Get all files in the codebase recursively
+    #     for root, dirs, files in os.walk(codebase_path):
+    #         # Skip entire directories - modify dirs in-place to avoid traversing
+    #         dirs[:] = [d for d in dirs if not any(ignored == d or f"/{ignored}/" in f"/{d}/" 
+    #                                              for ignored in ignore_dirs) 
+    #                   and not d.startswith('.')]
+            
+    #         # Get relative path for filtering
+    #         rel_path = os.path.relpath(root, codebase_path)
+            
+    #         # Skip if the current directory contains any of the ignore patterns
+    #         if any(ignored in rel_path.split(os.path.sep) for ignored in ignore_dirs) or rel_path.startswith('.'):
+    #             continue
+                
+    #         for file in files:
+    #             # Skip files with excluded extensions
+    #             if any(file.lower().endswith(ext) for ext in exclude_extensions):
+    #                 continue
+                    
+    #             # Only include files with specified extensions
+    #             if not any(file.lower().endswith(ext) for ext in include_extensions):
+    #                 continue
+                    
+    #             file_path = os.path.join(root, file)
+    #             relative_path = os.path.relpath(file_path, codebase_path)
+                
+    #             # Additional check for path components
+    #             if any(ignored in relative_path.split(os.path.sep) for ignored in ignore_dirs):
+    #                 continue
+                
+    #             try:
+    #                 # Use binary mode to avoid encoding issues
+    #                 with open(file_path, 'rb') as f:
+    #                     content = f.read()
+    #                     # Calculate hash of the file content
+    #                     file_hash = hashlib.sha256(content).digest()
+    #                     file_hashes[relative_path] = file_hash
+    #             except (IOError, OSError) as e:
+    #                 # Skip files that cannot be read, with more specific error handling
+    #                 continue
+        
+    #     # Create merkle tree from the file hashes
+    #     hash_values = list(file_hashes.values())
+    #     if not hash_values:
+    #         hash_values = [b'empty']  # Add a default value if there are no files
+            
+    #     merkle_tree = MerkleTree(hash_values)
+        
+    #     return merkle_tree, file_hashes
+    
     def build_merkle_tree(self, codebase_path: str) -> Tuple[MerkleTree, Dict[str, bytes]]:
         """
         Build a merkle tree from the codebase
@@ -124,14 +229,18 @@ class MerkleTreeService:
         for root, dirs, files in os.walk(codebase_path):
             # Skip entire directories - modify dirs in-place to avoid traversing
             dirs[:] = [d for d in dirs if not any(ignored == d or f"/{ignored}/" in f"/{d}/" 
-                                                 for ignored in ignore_dirs) 
-                      and not d.startswith('.')]
+                                                for ignored in ignore_dirs) 
+                    and not d.startswith('.')]
             
             # Get relative path for filtering
             rel_path = os.path.relpath(root, codebase_path)
             
-            # Skip if the current directory contains any of the ignore patterns
-            if any(ignored in rel_path.split(os.path.sep) for ignored in ignore_dirs) or rel_path.startswith('.'):
+            # Special handling for root directory - don't skip it even if it's "."
+            if rel_path == ".":
+                # Process root directory normally
+                pass
+            # For non-root directories, apply ignore rules
+            elif any(ignored in rel_path.split(os.path.sep) for ignored in ignore_dirs) or rel_path.startswith('.'):
                 continue
                 
             for file in files:
@@ -146,8 +255,8 @@ class MerkleTreeService:
                 file_path = os.path.join(root, file)
                 relative_path = os.path.relpath(file_path, codebase_path)
                 
-                # Additional check for path components
-                if any(ignored in relative_path.split(os.path.sep) for ignored in ignore_dirs):
+                # Additional check for path components, but don't skip files at the root level
+                if os.path.dirname(relative_path) and any(ignored in relative_path.split(os.path.sep) for ignored in ignore_dirs):
                     continue
                 
                 try:
@@ -169,7 +278,7 @@ class MerkleTreeService:
         merkle_tree = MerkleTree(hash_values)
         
         return merkle_tree, file_hashes
-    
+
     def get_changed_files(self, codebase_path: str) -> List[str]:
         """
         Get changed files for a codebase path

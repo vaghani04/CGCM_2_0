@@ -136,7 +136,6 @@ class CodeChunkingService:
             language = self.detect_language(file_path)
             
             chunker = CodeChunker(language=language, include_nodes=True, tokenizer_or_token_counter="gpt2")
-            # print(f"conten {content} , language {language}")
             chunks = chunker.chunk(text = content)
             
             # Process chunks into our format
