@@ -25,10 +25,18 @@ class ChunkProcessingStats(BaseModel):
         ..., description="Number of chunks already in database"
     )
     new_chunks: int = Field(..., description="Number of new chunks processed")
+    deleted_chunks: int = Field(
+        default=0, description="Number of chunks deleted from deleted files"
+    )
     embeddings_generated: int = Field(
         ..., description="Number of embeddings generated"
     )
-
+    pinecone_upserted: int = Field(
+        ..., description="Number of vectors upserted to Pinecone"
+    )
+    pinecone_deleted: int = Field(
+        default=0, description="Number of vectors deleted from Pinecone"
+    )
 
 
 class CodebaseIndexingResponse(BaseModel):

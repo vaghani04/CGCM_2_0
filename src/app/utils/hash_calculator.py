@@ -1,24 +1,28 @@
 import hashlib    
-def calculate_special_hash(content: str) -> str:
+def calculate_special_hash(content) -> str:
     """
-    Create a SHA-256 hash's special version of the given string content.
+    Create a SHA-256 hash's special version of the given content (string or bytes).
     
     Args:
-        content: The string content to hash
+        content: The content to hash (string or bytes)
         
     Returns:
         The SHA-256 hash as a hexadecimal string with only 30 characters
     """
-    return hashlib.sha256(content.encode('utf-8')).hexdigest()[:30]
+    if isinstance(content, str):
+        content = content.encode('utf-8')
+    return hashlib.sha256(content).hexdigest()[:30]
 
-def calculate_hash(content: str) -> str:
+def calculate_hash(content) -> str:
     """
-    Create a SHA-256 hash of the given string content.
+    Create a SHA-256 hash of the given content (string or bytes).
     
     Args:
-        content: The string content to hash
+        content: The content to hash (string or bytes)
         
     Returns:
         The SHA-256 hash as a hexadecimal string
     """
-    return hashlib.sha256(content.encode('utf-8')).hexdigest()
+    if isinstance(content, str):
+        content = content.encode('utf-8')
+    return hashlib.sha256(content).hexdigest()

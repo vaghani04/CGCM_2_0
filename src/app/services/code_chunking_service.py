@@ -143,7 +143,8 @@ class CodeChunkingService:
             result_chunks = []
             for chunk in chunks:
                 # Calculate hash for the chunk content
-                chunk_hash = calculate_hash(chunk.text)
+                # chunk_hash = calculate_hash(chunk.text)
+                chunk_hash = hashlib.sha256(chunk.text.encode('utf-8')).hexdigest()
                 
                 # Calculate line numbers
                 start_line, end_line = self.calculate_line_numbers(

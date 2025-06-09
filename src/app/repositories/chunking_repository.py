@@ -19,7 +19,7 @@ class ChunkingRepository:
 
     def _get_collection_name(self, codebase_path_hash: str) -> str:
         """Generate collection name from codebase hash"""
-        return f"_{codebase_path_hash}"
+        return f"chunking_{codebase_path_hash}"
 
     async def _get_or_create_collection(
         self, codebase_path_hash: str

@@ -118,6 +118,7 @@ class ContextGatherHelper:
         codebase_path_hash = calculate_hash(codebase_path)
         pinecone_index_name = f"{codebase_path.split('/')[-1].replace('_', '-')}-{codebase_path_hash}"
         data = {
+            "codebase_path_name": codebase_path,
             "codebase_path_hash": codebase_path_hash,
             "chunks": all_chunks,
             "deleted_file_paths": files_to_delete,
@@ -129,4 +130,5 @@ class ContextGatherHelper:
         # Store the current merkle tree
         self.file_storage_service.store_merkle_tree(storage_key, current_tree, current_file_hashes)      
         
-        return indexing_result
+        # Convert the CodebaseIndexingResponse to a dictionary
+        return indexing_result.model_dump()
