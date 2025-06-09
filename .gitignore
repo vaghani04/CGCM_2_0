@@ -1,0 +1,7 @@
+.venv/
+boilerplate.py
+.DS_Store
+__pycache__/
+.env
+.github/
+linters.sh

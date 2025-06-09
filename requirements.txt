@@ -1,0 +1,8 @@
+black 
+autoflake 
+isort 
+vulture
+uvicorn
+fastapi
+pydantic-settings
+motor
