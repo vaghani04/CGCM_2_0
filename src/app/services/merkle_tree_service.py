@@ -59,116 +59,20 @@ class MerkleTree:
         """Get the root hash of the tree"""
         return self._root_hash if self._root_hash else b''
 
+class FileChangeResult:
+    """Container for file change results"""
+    def __init__(self, changed_files: List[str], deleted_files: List[str]):
+        self.changed_files = changed_files
+        self.deleted_files = deleted_files
+    
+    def __repr__(self):
+        return f"FileChangeResult(changed={len(self.changed_files)}, deleted={len(self.deleted_files)})"
+
 class MerkleTreeService:
     def __init__(self):
         # Store previous merkle trees by codebase path
         self.previous_trees = {}
         self.previous_file_hashes = {}
-        
-    # def build_merkle_tree(self, codebase_path: str) -> Tuple[MerkleTree, Dict[str, bytes]]:
-    #     """
-    #     Build a merkle tree from the codebase
-        
-    #     Args:
-    #         codebase_path: Path to the codebase
-            
-    #     Returns:
-    #         Tuple containing the merkle tree and a mapping of file paths to hashes
-    #     """
-    #     file_hashes = {}
-        
-    #     # Only include these file types
-    #     include_extensions = [
-    #         '.py',     # Python
-    #         '.js',     # JavaScript
-    #         '.jsx',    # React JSX
-    #         '.ts',     # TypeScript
-    #         '.tsx',    # TypeScript React
-    #     ]
-        
-    #     # Explicitly exclude these file types (binary/media files)
-    #     exclude_extensions = [
-    #         '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico', '.svg',  # Images
-    #         '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', # Documents
-    #         '.zip', '.tar', '.gz', '.rar', '.7z',  # Archives
-    #         '.exe', '.dll', '.so', '.dylib',  # Binaries
-    #         '.mp3', '.mp4', '.wav', '.avi', '.mov',  # Media
-    #         '.ttf', '.otf', '.woff', '.woff2',  # Fonts
-    #         '.pyc', '.pyo', '.pyd',  # Python bytecode
-    #     ]
-        
-    #     # Directories to ignore
-    #     ignore_dirs = [
-    #         '.git',
-    #         '.venv',
-    #         'env',
-    #         'venv',
-    #         'node_modules',
-    #         '__pycache__',
-    #         '.idea',
-    #         '.vscode',
-    #         'dist',
-    #         'build',
-    #         '.pytest_cache',
-    #         '.mypy_cache',
-    #         'vendor',
-    #         'tmp',
-    #         '.dart_tool',
-    #         'media',
-    #         'static',
-    #         'assets',
-    #         'images',
-    #     ]
-        
-    #     # Get all files in the codebase recursively
-    #     for root, dirs, files in os.walk(codebase_path):
-    #         # Skip entire directories - modify dirs in-place to avoid traversing
-    #         dirs[:] = [d for d in dirs if not any(ignored == d or f"/{ignored}/" in f"/{d}/" 
-    #                                              for ignored in ignore_dirs) 
-    #                   and not d.startswith('.')]
-            
-    #         # Get relative path for filtering
-    #         rel_path = os.path.relpath(root, codebase_path)
-            
-    #         # Skip if the current directory contains any of the ignore patterns
-    #         if any(ignored in rel_path.split(os.path.sep) for ignored in ignore_dirs) or rel_path.startswith('.'):
-    #             continue
-                
-    #         for file in files:
-    #             # Skip files with excluded extensions
-    #             if any(file.lower().endswith(ext) for ext in exclude_extensions):
-    #                 continue
-                    
-    #             # Only include files with specified extensions
-    #             if not any(file.lower().endswith(ext) for ext in include_extensions):
-    #                 continue
-                    
-    #             file_path = os.path.join(root, file)
-    #             relative_path = os.path.relpath(file_path, codebase_path)
-                
-    #             # Additional check for path components
-    #             if any(ignored in relative_path.split(os.path.sep) for ignored in ignore_dirs):
-    #                 continue
-                
-    #             try:
-    #                 # Use binary mode to avoid encoding issues
-    #                 with open(file_path, 'rb') as f:
-    #                     content = f.read()
-    #                     # Calculate hash of the file content
-    #                     file_hash = hashlib.sha256(content).digest()
-    #                     file_hashes[relative_path] = file_hash
-    #             except (IOError, OSError) as e:
-    #                 # Skip files that cannot be read, with more specific error handling
-    #                 continue
-        
-    #     # Create merkle tree from the file hashes
-    #     hash_values = list(file_hashes.values())
-    #     if not hash_values:
-    #         hash_values = [b'empty']  # Add a default value if there are no files
-            
-    #     merkle_tree = MerkleTree(hash_values)
-        
-    #     return merkle_tree, file_hashes
     
     def build_merkle_tree(self, codebase_path: str) -> Tuple[MerkleTree, Dict[str, bytes]]:
         """
@@ -279,15 +183,15 @@ class MerkleTreeService:
         
         return merkle_tree, file_hashes
 
-    def get_changed_files(self, codebase_path: str) -> List[str]:
+    def get_changed_files(self, codebase_path: str) -> FileChangeResult:
         """
-        Get changed files for a codebase path
+        Get changed and deleted files for a codebase path
         
         Args:
             codebase_path: Path to the codebase
             
         Returns:
-            List of file paths that have changed
+            FileChangeResult containing changed files and deleted files
         """
         # Build new merkle tree
         new_tree, new_file_hashes = self.build_merkle_tree(codebase_path)
@@ -296,14 +200,14 @@ class MerkleTreeService:
         if codebase_path not in self.previous_trees:
             self.previous_trees[codebase_path] = new_tree
             self.previous_file_hashes[codebase_path] = new_file_hashes
-            return list(new_file_hashes.keys())
+            return FileChangeResult(list(new_file_hashes.keys()), [])
         
         # Get previous tree and hashes
         old_tree = self.previous_trees[codebase_path]
         old_file_hashes = self.previous_file_hashes[codebase_path]
         
-        # Compare trees and get changed files
-        changed_files = self.compare_merkle_trees(
+        # Compare trees and get changed/deleted files
+        changed_files, deleted_files = self.compare_merkle_trees(
             old_tree, 
             new_tree, 
             old_file_hashes, 
@@ -314,15 +218,15 @@ class MerkleTreeService:
         self.previous_trees[codebase_path] = new_tree
         self.previous_file_hashes[codebase_path] = new_file_hashes
         
-        return changed_files
+        return FileChangeResult(changed_files, deleted_files)
     
     def compare_merkle_trees(self, 
                              old_tree: MerkleTree, 
                              new_tree: MerkleTree, 
                              old_file_hashes: Dict[str, bytes], 
-                             new_file_hashes: Dict[str, bytes]) -> List[str]:
+                             new_file_hashes: Dict[str, bytes]) -> Tuple[List[str], List[str]]:
         """
-        Compare two merkle trees and return files that have changed
+        Compare two merkle trees and return files that have changed and been deleted
         
         Args:
             old_tree: Previous merkle tree
@@ -331,22 +235,37 @@ class MerkleTreeService:
             new_file_hashes: Current file hashes mapping
             
         Returns:
-            List of file paths that have changed
+            Tuple containing (changed_files, deleted_files)
         """
         # Check if the root has changed
         if old_tree.root == new_tree.root:
-            return []
+            return [], []
             
         changed_files = []
+        deleted_files = []
         
-        # Find files that were added, removed, or modified
+        # Find files that were added or modified
         for file_path, file_hash in new_file_hashes.items():
             if file_path not in old_file_hashes or old_file_hashes[file_path] != file_hash:
                 changed_files.append(file_path)
                 
-        # Add files that were removed
+        # Find files that were deleted
         for file_path in old_file_hashes:
             if file_path not in new_file_hashes:
-                changed_files.append(file_path)
+                deleted_files.append(file_path)
                 
-        return changed_files
+        return changed_files, deleted_files
+
+    def get_changed_files_legacy(self, codebase_path: str) -> List[str]:
+        """
+        Legacy method that returns only changed files (for backward compatibility)
+        
+        Args:
+            codebase_path: Path to the codebase
+            
+        Returns:
+            List of file paths that have changed (includes deleted files)
+        """
+        result = self.get_changed_files(codebase_path)
+        # Combine changed and deleted files for backward compatibility
+        return result.changed_files + result.deleted_files
