@@ -7,6 +7,8 @@ from src.app.services.merkle_tree_service import MerkleTreeService
 from src.app.services.code_chunking_service import CodeChunkingService
 from src.app.services.file_storage_service import FileStorageService
 from src.app.config.database import mongodb_database
+from src.app.usecases.context_gather_usecases.codebase_indexing_usecase import CodebaseIndexingUseCase
+from src.app.utils.hash_calculator import calculate_special_hash, calculate_hash
 
 class ContextGatherHelper:
     def __init__(self,
@@ -14,24 +16,14 @@ class ContextGatherHelper:
                 merkle_tree_service: MerkleTreeService = Depends(MerkleTreeService),
                 code_chunking_service: CodeChunkingService = Depends(CodeChunkingService),
                 file_storage_service: FileStorageService = Depends(FileStorageService),
+                codebase_indexing_use_case: CodebaseIndexingUseCase = Depends(CodebaseIndexingUseCase),
             ):
         self.path_validation_service = path_validation_service
         self.merkle_tree_service = merkle_tree_service
         self.code_chunking_service = code_chunking_service
         self.file_storage_service = file_storage_service
         self.mongodb = mongodb_database
-    
-    def calculate_special_hash(self, content: str) -> str:
-        """
-        Create a SHA-256 hash of the given string content.
-        
-        Args:
-            content: The string content to hash
-            
-        Returns:
-            The SHA-256 hash as a hexadecimal string
-        """
-        return hashlib.sha256(content.encode('utf-8')).hexdigest()[:30]
+        self.codebase_indexing_use_case = codebase_indexing_use_case
 
     async def get_current_branch_name(self, codebase_path: str) -> str | None:
         
@@ -75,7 +67,7 @@ class ContextGatherHelper:
         # Initialize statistics
         stats = {
             "git_branch": git_branch_name,
-            "workspace_path": codebase_path,
+            "codebase_path": codebase_path,
         }
         
         # Build current merkle tree
@@ -123,7 +115,18 @@ class ContextGatherHelper:
             
         stats["total_chunks_created"] = len(all_chunks)
         
+        codebase_path_hash = calculate_hash(codebase_path)
+        pinecone_index_name = f"{codebase_path.split('/')[-1].replace('_', '-')}-{codebase_path_hash}"
+        data = {
+            "codebase_path_hash": codebase_path_hash,
+            "chunks": all_chunks,
+            "deleted_file_paths": files_to_delete,
+            "current_git_branch": git_branch_name,
+        }
+
+        indexing_result = await self.codebase_indexing_use_case.process_codebase_chunks(data)
+
         # Store the current merkle tree
         self.file_storage_service.store_merkle_tree(storage_key, current_tree, current_file_hashes)      
         
-        return stats
+        return indexing_result
