@@ -7,4 +7,6 @@ class ContextGatherController:
 
     async def context_gather(self, context_path: str):
         result = await self.context_gather_usecase.execute(context_path)
+
+        
         return result
