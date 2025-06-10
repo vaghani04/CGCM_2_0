@@ -1,52 +1,76 @@
+import json
+import os
 from fastapi import Depends
-from src.app.services.query_analysis_service import QueryAnalysisService
-from src.app.services.cypher_query_service import CypherQueryService
-from src.app.services.graphdb_query_service import GraphDBQueryService
 from src.app.services.context_assembly_service import ContextAssemblyService
-from typing import Dict, List, Any
+from src.app.usecases.user_query_usecases.repo_map_usecase import RepoMapUsecase
+from typing import Dict, Any
 
 class UserQueryHelper:
     def __init__(self,
-                 query_analysis_service: QueryAnalysisService = Depends(QueryAnalysisService),
-                 cypher_query_service: CypherQueryService = Depends(CypherQueryService),
-                 graphdb_query_service: GraphDBQueryService = Depends(GraphDBQueryService),
-                 context_assembly_service: ContextAssemblyService = Depends(ContextAssemblyService)):
-        self.query_analysis_service = query_analysis_service
-        self.cypher_query_service = cypher_query_service
-        self.graphdb_query_service = graphdb_query_service
+                context_assembly_service: ContextAssemblyService = Depends(ContextAssemblyService),
+                repo_map_usecase: RepoMapUsecase = Depends(RepoMapUsecase),
+    ):
         self.context_assembly_service = context_assembly_service
-
-    async def context_from_repo_map(self, query: str) -> str:
+        self.repo_map_usecase = repo_map_usecase
+        
+    async def context_from_repo_map(self, user_query_data: Dict[str, Any]) -> str:
         """
         Process a natural language query and retrieve relevant context from the repository map in GraphDB.
+        Using LLM to generate Cypher queries directly from user input.
         
         Args:
-            query: The natural language query string
+            user_query_data: Dictionary containing 'query' and 'codebase_path' keys
             
         Returns:
             Context assembled from the GraphDB query results
         """
         try:
-            # Step 1: Analyze the natural language query
-            query_analysis = await self.query_analysis_service.analyze_query(query)
+            query = user_query_data["query"]
+            codebase_path = user_query_data["codebase_path"]
+
+            # graph_db_project_structure = await self.repo_map_usecase._get_project_structure()
+            # # return graph_db_project_structure
+            # with open("intermediate_outputs/graph_db_project_structure.txt", "w") as f:
+            #     f.write(graph_db_project_structure)
             
-            # Step 2: Generate appropriate Cypher query
-            cypher_query_data = await self.cypher_query_service.generate_query(query_analysis)
+            # Get project structure
+            print(f"Getting directory structure for {codebase_path}")
+            project_structure = await self.repo_map_usecase.get_directory_structure(codebase_path, depth=3)
             
-            # Step 3: Execute the Cypher query against the GraphDB
-            cypher_query = cypher_query_data["cypher_query"]
-            parameters = cypher_query_data["parameters"]
-            template_used = cypher_query_data["template_used"]
+            # Generate Cypher queries using LLM
+            print(f"Generating Cypher queries for: {query}")
+            cypher_queries = await self.repo_map_usecase._generate_cypher_queries(query, project_structure)
+
+            # with open("intermediate_outputs/cypher_queries.json", "r") as f:
+            #     cypher_queries = json.load(f)
+            #     cypher_queries = cypher_queries["queries"]
+            # Execute queries in parallel
+            print(f"Executing {len(cypher_queries)} Cypher queries")
             
-            query_results = await self.graphdb_query_service.execute_cypher_query(cypher_query, parameters)
+            results = await self.repo_map_usecase._execute_queries_parallel(cypher_queries)
+            with open("intermediate_outputs/cypher_queries_execution_results.json", "w") as f:
+                json.dump(results, f)
+
             
-            # Step 4: Process the results into a structured format
-            structured_results = await self.graphdb_query_service.process_structured_result(query_results)
-            structured_results["template_used"] = template_used
+            # with open("intermediate_outputs/cypher_queries_execution_results.json", "r") as f:
+            #     results = json.load(f)
             
-            # Step 5: Assemble the final context
-            context = await self.context_assembly_service.assemble_context(structured_results, query)
+            # Process and structure the results
+            # structured_results = {
+            #     "found": ,
+            #     "results": results,
+            #     "query_count": len(cypher_queries),
+            #     "template_used": "llm_generated"  # For compatibility with existing code
+            # }
             
+            # Assemble the final context
+            print(f"Assembling context from {len(results.get('results', []))} results")
+            context = await self.context_assembly_service.assemble_context(results, query)
+            
+            
+            with open("intermediate_outputs/repo_map_context.txt", "w") as f:
+                f.write(context)
+
             return context
             
         except Exception as e:

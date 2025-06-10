@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     # Repository Map settings
     REPO_MAP_OUTPUT_FILE: str = "final_repo_map.json"
-    REPO_MAP_SUPPORTED_EXTENSIONS: list = [".py", ".js", ".jsx", ".ts", ".tsx", ".java", ".cpp", ".c", ".h", ".hpp", ".cs", ".go", ".rb", ".php", ".rs"]
+    REPO_MAP_SUPPORTED_EXTENSIONS: list = [".py", ".js", ".jsx", ".ts", ".tsx"]
     REPO_MAP_EXCLUDED_DIRS: list = ["node_modules", "__pycache__", ".git", ".venv", "venv", "env", "build", "dist", ".next", "target", "bin", "obj"]
     REPO_MAP_MAX_FILE_SIZE_MB: int = 5
     REPO_MAP_CHUNK_SIZE: int = 1000
@@ -49,6 +49,12 @@ class Settings(BaseSettings):
     GRAPHDB_BATCH_SIZE: int = 100
     GRAPHDB_MAX_RETRIES: int = 3
     GRAPHDB_RETRY_DELAY: int = 1
+
+    # OpenAI settings
+    OPENAI_API_KEY: str = ""
+    OPENAI_BASE_URL: str = "https://api.openai.com/v1"
+    OPENAI_COMPLETION_ENDPOINT: str = "/chat/completions"
+    OPENAI_MODEL: str = "gpt-4.1-mini"
 
     class Config:
         env_file = ".env"

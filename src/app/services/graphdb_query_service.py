@@ -11,17 +11,20 @@ class GraphDBQueryService:
     def __init__(self, neo4j_service: Neo4jService = Depends(Neo4jService)):
         self.neo4j_service = neo4j_service
     
-    async def execute_cypher_query(self, cypher_query: str, parameters: Dict[str, Any]) -> List[Dict[str, Any]]:
+    async def execute_cypher_query(self, cypher_query: str, parameters: Dict[str, Any] = None) -> List[Dict[str, Any]]:
         """
         Execute a Cypher query against the Neo4j database.
         
         Args:
             cypher_query: The Cypher query string
-            parameters: Dictionary of query parameters
+            parameters: Dictionary of query parameters (optional)
             
         Returns:
             List of records returned by the query
         """
+        if parameters is None:
+            parameters = {}
+        
         query = GraphQuery(cypher_query=cypher_query, parameters=parameters)
         
         try:

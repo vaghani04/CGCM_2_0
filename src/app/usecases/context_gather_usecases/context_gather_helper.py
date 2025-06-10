@@ -38,7 +38,7 @@ class ContextGatherHelper:
             # Generate repository map and store in GraphDB
             result = await self.repo_map_graphdb_usecase.generate_and_store_repo_map(
                 codebase_path=codebase_path,
-                output_file="outputs/repo_map_from_route.json"
+                output_file="intermediate_outputs/repo_map_from_route.json"
             )
             
             return result
