@@ -9,3 +9,9 @@ testing/
 .cgcm/
 struct_logs/
 .cursor/
+outputs/
+temp/
+problem_statement_and_system_working.md
+rules.md
+next_implementation_goal.md
+implementation_mds/

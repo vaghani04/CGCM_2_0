@@ -3,29 +3,29 @@ import time
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
-from src.app.controllers.context_gather_controller import (
-    ContextGatherController,
+from src.app.controllers.user_query_controller import (
+    UserQueryController,
 )
-from src.app.models.schemas.context_gather_query_schema import CodebaseContextRequest
+from src.app.models.schemas.user_query_schema import UserQueryRequest
 from src.app.utils.error_handler import handle_exceptions
 
 router = APIRouter()
 
 
-@router.post("/context-gather")
+@router.post("/user-query")
 @handle_exceptions
-async def context_gather_route(
-    codebase_context: CodebaseContextRequest,
-    context_gather_controller: ContextGatherController = Depends(
-        ContextGatherController
+async def user_query_route(
+    user_query: UserQueryRequest,
+    user_query_controller: UserQueryController = Depends(
+        UserQueryController
     ),
 ):
     start_time = time.time()
     print(f"API request started at: {start_time}")
 
-    response_data = await context_gather_controller.context_gather(codebase_context.codebase_path)
+    response_data = await user_query_controller.user_query(user_query.query)
 
-    status_message = "Context Gathered Successfully!"
+    status_message = "User Query Successfully!"
     end_time = time.time()
     time_taken = end_time - start_time
 

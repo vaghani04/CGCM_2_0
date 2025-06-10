@@ -9,6 +9,8 @@ from src.app.services.file_storage_service import FileStorageService
 from src.app.config.database import mongodb_database
 from src.app.usecases.context_gather_usecases.codebase_indexing_usecase import CodebaseIndexingUseCase
 from src.app.utils.hash_calculator import calculate_special_hash, calculate_hash
+from src.app.services.repo_map_service import RepositoryMapService
+from src.app.usecases.context_gather_usecases.repo_map_graphdb_usecase import RepoMapGraphDBUseCase
 
 class ContextGatherHelper:
     def __init__(self,
@@ -17,6 +19,7 @@ class ContextGatherHelper:
                 code_chunking_service: CodeChunkingService = Depends(CodeChunkingService),
                 file_storage_service: FileStorageService = Depends(FileStorageService),
                 codebase_indexing_use_case: CodebaseIndexingUseCase = Depends(CodebaseIndexingUseCase),
+                repo_map_service: RepositoryMapService = Depends(RepositoryMapService),
             ):
         self.path_validation_service = path_validation_service
         self.merkle_tree_service = merkle_tree_service
@@ -24,6 +27,25 @@ class ContextGatherHelper:
         self.file_storage_service = file_storage_service
         self.mongodb = mongodb_database
         self.codebase_indexing_use_case = codebase_indexing_use_case
+        self.repo_map_service = repo_map_service
+        self.repo_map_graphdb_usecase = RepoMapGraphDBUseCase()
+
+    async def generate_repo_map(self, codebase_path: str):
+        """
+        Generate the repository map for the given codebase path and store it in GraphDB.
+        """
+        try:
+            # Generate repository map and store in GraphDB
+            result = await self.repo_map_graphdb_usecase.generate_and_store_repo_map(
+                codebase_path=codebase_path,
+                output_file="outputs/repo_map_from_route.json"
+            )
+            
+            return result
+            
+        except Exception as e:
+            print(f"Error in generate_repo_map: {e}")
+            raise e
 
     async def get_current_branch_name(self, codebase_path: str) -> str | None:
         

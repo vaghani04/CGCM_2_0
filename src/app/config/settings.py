@@ -28,9 +28,27 @@ class Settings(BaseSettings):
     EMBEDDINGS_DIMENSION: int = 1024
     EMBEDDINGS_MODEL: str = "voyage-code-3"
 
+    # Repository Map settings
+    REPO_MAP_OUTPUT_FILE: str = "final_repo_map.json"
+    REPO_MAP_SUPPORTED_EXTENSIONS: list = [".py", ".js", ".jsx", ".ts", ".tsx", ".java", ".cpp", ".c", ".h", ".hpp", ".cs", ".go", ".rb", ".php", ".rs"]
+    REPO_MAP_EXCLUDED_DIRS: list = ["node_modules", "__pycache__", ".git", ".venv", "venv", "env", "build", "dist", ".next", "target", "bin", "obj"]
+    REPO_MAP_MAX_FILE_SIZE_MB: int = 5
+    REPO_MAP_CHUNK_SIZE: int = 1000
+
     # Voyage Settings
     VOYAGEAI_API_KEY: str = "sdf"
     VOYAGEAI_BASE_URL: str = "https://api.voyageai.com/v1"
+
+    # Neo4j Graph Database settings
+    NEO4J_URI: str = "bolt://localhost:7687"
+    NEO4J_USER: str = "neo4j"
+    NEO4J_PASSWORD: str = "password"
+    NEO4J_DATABASE: str = "neo4j"
+    
+    # GraphDB settings
+    GRAPHDB_BATCH_SIZE: int = 100
+    GRAPHDB_MAX_RETRIES: int = 3
+    GRAPHDB_RETRY_DELAY: int = 1
 
     class Config:
         env_file = ".env"

@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from src.app.config.database import mongodb_database
 from src.app.middlewares.path_validation_middleware import PathValidationMiddleware
 from src.app.routes import context_gather_route
+from src.app.routes import user_query_route
 
 
 @asynccontextmanager
@@ -25,6 +26,9 @@ app.add_middleware(PathValidationMiddleware)
 # Include routers
 app.include_router(
     context_gather_route.router, prefix="/api/v1", tags=["Context Gathering"]
+)
+app.include_router(
+    user_query_route.router, prefix="/api/v1", tags=["User Query"]
 )
 
 @app.get("/")
