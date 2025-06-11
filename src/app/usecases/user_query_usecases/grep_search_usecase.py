@@ -205,65 +205,229 @@ class GrepSearchUsecase:
     
     async def _format_search_results(self, search_results: List[Dict[str, Any]], original_query: str) -> str:
         """
-        Format the search results into a readable string format.
+        Format the search results into a structured, machine-readable JSON format 
+        optimized for autonomous agent consumption.
         
         Args:
             search_results: List of search results from grep commands
             original_query: The original user query
             
         Returns:
-            Formatted results as a string
+            JSON-formatted results as a string for autonomous agent processing
         """
         if not search_results:
-            return f"No results found for query: '{original_query}'"
+            return json.dumps({
+                "search_context": {
+                    "original_query": original_query,
+                    "total_matches": 0,
+                    "status": "no_results"
+                },
+                "findings": [],
+                "summary": "No relevant code patterns found for the specified query."
+            }, indent=2)
         
-        formatted_output = []
-        formatted_output.append(f"=== Grep Search Results for: '{original_query}' ===\n")
-        
+        # Process and categorize findings
+        code_findings = []
         total_matches = 0
-        successful_commands = 0
+        successful_searches = 0
         
         for result in search_results:
-            command_desc = result.get("command_description", "Unknown command")
-            command_reasoning = result.get("command_reasoning", "")
             status = result.get("status", "unknown")
             count = result.get("count", 0)
             
-            formatted_output.append(f"Command {result.get('command_index', '?')}: {command_desc}")
-            formatted_output.append(f"Reasoning: {command_reasoning}")
-            formatted_output.append(f"Status: {status}")
-            formatted_output.append(f"Matches found: {count}")
-            
             if status == "success" and count > 0:
-                successful_commands += 1
+                successful_searches += 1
                 total_matches += count
                 
-                # Add the actual search results
                 results_text = result.get("results", "")
                 if results_text and results_text != "No matches found":
-                    formatted_output.append("Results:")
-                    formatted_output.append(results_text)
-            elif status == "error":
-                error_msg = result.get("results", "Unknown error")
-                formatted_output.append(f"Error: {error_msg}")
-            else:
-                formatted_output.append("No matches found for this command")
+                    # Parse grep output into structured findings
+                    findings = self._parse_grep_output(
+                        results_text, 
+                        result.get("command_description", ""),
+                        result.get("command_reasoning", "")
+                    )
+                    code_findings.extend(findings)
+        
+        # Create structured output optimized for autonomous agents
+        structured_output = {
+            "search_context": {
+                "original_query": original_query,
+                "total_matches": total_matches,
+                "successful_searches": successful_searches,
+                "status": "success" if total_matches > 0 else "no_matches"
+            },
+            "findings": code_findings[:20],  # Limit to top 20 most relevant
+            "summary": self._generate_concise_summary(code_findings, original_query)
+        }
+        
+        # Save both structured and debug versions
+        with open("intermediate_outputs/grep_search_structured_output.json", "w") as f:
+            json.dump(structured_output, f, indent=2)
+        
+        return json.dumps(structured_output, indent=2)
+    
+    def _parse_grep_output(self, grep_output: str, search_description: str, reasoning: str) -> List[Dict[str, Any]]:
+        """
+        Parse raw grep output into structured findings for autonomous agents.
+        
+        Args:
+            grep_output: Raw output from ripgrep
+            search_description: Description of what was searched
+            reasoning: Why this search was performed
             
-            formatted_output.append("-" * 80)
+        Returns:
+            List of structured findings
+        """
+        findings = []
+        lines = grep_output.strip().split('\n')
         
-        # Add summary
-        formatted_output.append(f"\n=== Search Summary ===")
-        formatted_output.append(f"Total commands executed: {len(search_results)}")
-        formatted_output.append(f"Successful commands: {successful_commands}")
-        formatted_output.append(f"Total matches found: {total_matches}")
+        for line in lines:
+            if ':' in line:
+                try:
+                    # Parse grep output format: file_path:line_number:content
+                    parts = line.split(':', 2)
+                    if len(parts) >= 3:
+                        file_path = parts[0].strip()
+                        line_number = parts[1].strip()
+                        content = parts[2].strip()
+                        
+                        # Categorize the finding
+                        finding_type = self._categorize_finding(content)
+                        
+                        finding = {
+                            "file_path": file_path,
+                            "line_number": int(line_number) if line_number.isdigit() else line_number,
+                            "content": content,
+                            "type": finding_type,
+                            "search_context": {
+                                "description": search_description,
+                                "reasoning": reasoning
+                            },
+                            "relevance_score": self._calculate_relevance_score(content, finding_type)
+                        }
+                        findings.append(finding)
+                except (ValueError, IndexError):
+                    # Skip malformed lines
+                    continue
         
-        final_output = "\n".join(formatted_output)
+        # Sort by relevance score
+        findings.sort(key=lambda x: x.get("relevance_score", 0), reverse=True)
+        return findings
+    
+    def _categorize_finding(self, content: str) -> str:
+        """
+        Categorize code findings for autonomous agent understanding.
         
-        # Save formatted output for debugging
-        with open("intermediate_outputs/grep_search_formatted_output.txt", "w") as f:
-            f.write(final_output)
+        Args:
+            content: Code content line
+            
+        Returns:
+            Category type string
+        """
+        content_lower = content.lower().strip()
         
-        return final_output
+        # Function definitions
+        if any(pattern in content_lower for pattern in ['def ', 'function ', 'const ', 'async def']):
+            return "function_definition"
+        
+        # Class definitions
+        if any(pattern in content_lower for pattern in ['class ', 'interface ', 'type ']):
+            return "class_definition"
+        
+        # Import statements
+        if any(pattern in content_lower for pattern in ['import ', 'from ', 'require(', '#include']):
+            return "import_statement"
+        
+        # Error handling
+        if any(pattern in content_lower for pattern in ['error', 'exception', 'throw', 'raise', 'catch', 'try']):
+            return "error_handling"
+        
+        # Configuration
+        if any(pattern in content_lower for pattern in ['config', 'settings', 'env', 'api_key']):
+            return "configuration"
+        
+        # Comments and documentation
+        if any(pattern in content_lower for pattern in ['todo', 'fixme', 'note', 'bug', 'hack', '//', '#', '"""']):
+            return "documentation"
+        
+        # Variable declarations
+        if any(pattern in content_lower for pattern in ['let ', 'var ', 'const ', '= ']):
+            return "variable_declaration"
+        
+        return "code_reference"
+    
+    def _calculate_relevance_score(self, content: str, finding_type: str) -> float:
+        """
+        Calculate relevance score for prioritizing findings.
+        
+        Args:
+            content: Code content
+            finding_type: Type of finding
+            
+        Returns:
+            Relevance score (0.0 - 1.0)
+        """
+        base_scores = {
+            "function_definition": 0.9,
+            "class_definition": 0.8,
+            "error_handling": 0.7,
+            "import_statement": 0.6,
+            "configuration": 0.5,
+            "variable_declaration": 0.4,
+            "documentation": 0.3,
+            "code_reference": 0.2
+        }
+        
+        base_score = base_scores.get(finding_type, 0.1)
+        
+        # Boost score for common important patterns
+        content_lower = content.lower()
+        if any(pattern in content_lower for pattern in ['main', 'init', 'setup', 'config']):
+            base_score += 0.1
+        
+        # Reduce score for test files
+        if any(pattern in content_lower for pattern in ['test', 'spec', 'mock']):
+            base_score -= 0.2
+        
+        return max(0.0, min(1.0, base_score))
+    
+    def _generate_concise_summary(self, findings: List[Dict[str, Any]], original_query: str) -> str:
+        """
+        Generate a concise summary for autonomous agents.
+        
+        Args:
+            findings: List of code findings
+            original_query: Original user query
+            
+        Returns:
+            Concise summary string
+        """
+        if not findings:
+            return f"No relevant code found for: {original_query}"
+        
+        # Count findings by type
+        type_counts = {}
+        file_counts = {}
+        
+        for finding in findings:
+            finding_type = finding.get("type", "unknown")
+            file_path = finding.get("file_path", "unknown")
+            
+            type_counts[finding_type] = type_counts.get(finding_type, 0) + 1
+            file_counts[file_path] = file_counts.get(file_path, 0) + 1
+        
+        # Generate concise summary
+        top_types = sorted(type_counts.items(), key=lambda x: x[1], reverse=True)[:3]
+        top_files = sorted(file_counts.items(), key=lambda x: x[1], reverse=True)[:3]
+        
+        summary_parts = [
+            f"Found {len(findings)} relevant code references for '{original_query}'.",
+            f"Primary patterns: {', '.join([f'{t[0]}({t[1]})' for t in top_types])}.",
+            f"Key files: {', '.join([t[0] for t in top_files])}."
+        ]
+        
+        return " ".join(summary_parts)
         
 
     async def execute_grep_search(
