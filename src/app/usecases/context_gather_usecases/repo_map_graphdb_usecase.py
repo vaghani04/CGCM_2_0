@@ -18,6 +18,7 @@ class RepoMapGraphDBUseCase:
                                         output_file: str = None) -> Dict[str, Any]:
         """
         Generate repository map and store it in GraphDB.
+        IMPORTANT: This method clears the entire GraphDB before storing the new repo map.
         
         Args:
             codebase_path: Path to the codebase to analyze
@@ -28,7 +29,15 @@ class RepoMapGraphDBUseCase:
         """
         
         try:
-            # Step 1: Generate repository map
+            # Step 1: Clear GraphDB before generating new repo map
+            print("🧹 Clearing GraphDB before generating new repo map...")
+            clear_result = await self.clear_graphdb()
+            if clear_result["status"] != "success":
+                print(f"⚠️ Warning: Failed to clear GraphDB: {clear_result.get('error_message', 'Unknown error')}")
+            else:
+                print("✓ GraphDB cleared successfully")
+            
+            # Step 2: Generate repository map
             print("🔍 Generating repository map...")
             repo_map_result = await self.repo_map_service.generate_repository_map(
                 codebase_path=codebase_path,
@@ -37,16 +46,16 @@ class RepoMapGraphDBUseCase:
             
             print(f"✓ Repository map generated: {repo_map_result['total_files_analyzed']} files analyzed")
             
-            # Step 2: Load the generated repository map
+            # Step 3: Load the generated repository map
             repo_map_file = repo_map_result["repository_map_file"]
             with open(repo_map_file, 'r') as f:
                 repo_map_data = json.load(f)
             
-            # Step 3: Import into GraphDB
+            # Step 4: Import into GraphDB
             print("📊 Importing repository map into GraphDB...")
             import_stats = await self.graphdb_import_service.import_repository_map(repo_map_data)
             
-            # Step 4: Get database statistics
+            # Step 5: Get database statistics
             db_stats = await self.graphdb_import_service.get_import_stats()
             
             # Combine results

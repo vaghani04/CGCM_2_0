@@ -38,5 +38,4 @@ class ContextGatherUseCase:
 
         stats = await self.context_gather_helper.chunking_and_storage(codebase_path, git_branch_name)
 
-        # repo_map = await self.context_gather_helper.generate_repo_map(codebase_path)
         return stats

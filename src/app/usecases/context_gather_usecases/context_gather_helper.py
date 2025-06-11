@@ -1,6 +1,7 @@
 import subprocess
 import hashlib
 import json
+import asyncio
 from fastapi import Depends, HTTPException, status
 import os
 from src.app.services.path_validation_service import PathValidationService
@@ -157,12 +158,48 @@ class ContextGatherHelper:
             "current_git_branch": git_branch_name,
         }
 
-        indexing_result = await self.codebase_indexing_use_case.process_codebase_chunks(data)
-
-        repo_map = await self.generate_repo_map(codebase_path)
-
-        # Store the current merkle tree
-        self.file_storage_service.store_merkle_tree(storage_key, current_tree, current_file_hashes)      
+        # Run both operations in parallel since they are independent
+        print("🚀 Starting parallel execution of codebase indexing and repo map generation...")
         
-        # Convert the CodebaseIndexingResponse to a dictionary
-        return indexing_result.model_dump()
+        # Create tasks for parallel execution
+        indexing_task = asyncio.create_task(
+            self.codebase_indexing_use_case.process_codebase_chunks(data),
+            name="codebase_indexing"
+        )
+        
+        repo_map_task = asyncio.create_task(
+            self.generate_repo_map(codebase_path),
+            name="repo_map_generation"
+        )
+        
+        # Wait for both tasks to complete
+        try:
+            indexing_result, repo_map_result = await asyncio.gather(
+                indexing_task,
+                repo_map_task,
+                return_exceptions=True
+            )
+            
+            print("✓ Both parallel operations completed")
+            
+            # Handle any exceptions
+            if isinstance(indexing_result, Exception):
+                print(f"❌ Codebase indexing failed: {indexing_result}")
+                raise indexing_result
+                
+            if isinstance(repo_map_result, Exception):
+                print(f"❌ Repo map generation failed: {repo_map_result}")
+                raise repo_map_result
+            
+            # Store the current merkle tree
+            self.file_storage_service.store_merkle_tree(storage_key, current_tree, current_file_hashes)
+            
+            # Combine results from both operations
+            combined_result = indexing_result.model_dump()
+            combined_result["repo_map_result"] = repo_map_result
+            
+            return combined_result
+            
+        except Exception as e:
+            print(f"❌ Error during parallel execution: {e}")
+            raise e
