@@ -159,6 +159,8 @@ class ContextGatherHelper:
 
         indexing_result = await self.codebase_indexing_use_case.process_codebase_chunks(data)
 
+        repo_map = await self.generate_repo_map(codebase_path)
+
         # Store the current merkle tree
         self.file_storage_service.store_merkle_tree(storage_key, current_tree, current_file_hashes)      
         

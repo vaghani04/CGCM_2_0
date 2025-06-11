@@ -9,6 +9,8 @@ class UserQueryUseCase:
     async def execute(self, user_query: Dict[str, Any]):
         # repo_map_context = await self.user_query_helper.context_from_repo_map(user_query)
         
-        rag_context = await self.user_query_helper.context_from_rag(user_query)
+        # rag_context = await self.user_query_helper.context_from_rag(user_query)
 
-        return rag_context
+        grep_search_context = await self.user_query_helper.context_from_grep_search(user_query)
+
+        return grep_search_context

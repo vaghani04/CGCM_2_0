@@ -7,6 +7,8 @@ from src.app.usecases.user_query_usecases.rag_retrieval_usecase import RAGRetrie
 from typing import Dict, Any
 from src.app.utils.hash_calculator import calculate_special_hash, calculate_hash
 from src.app.usecases.context_gather_usecases.context_gather_helper import ContextGatherHelper
+from src.app.usecases.user_query_usecases.grep_search_usecase import GrepSearchUsecase
+from src.app.models.schemas.grep_search_query_schema import GrepSearchQueryRequest
 
 class UserQueryHelper:
     def __init__(self,
@@ -14,11 +16,14 @@ class UserQueryHelper:
                 repo_map_usecase: RepoMapUsecase = Depends(RepoMapUsecase),
                 rag_retrieval_usecase: RAGRetrievalUsecase = Depends(RAGRetrievalUsecase),
                 context_gather_helper: ContextGatherHelper = Depends(ContextGatherHelper),
+                grep_search_usecase: GrepSearchUsecase = Depends(GrepSearchUsecase),
     ):
         self.context_assembly_service = context_assembly_service
         self.repo_map_usecase = repo_map_usecase
         self.rag_retrieval_usecase = rag_retrieval_usecase
         self.context_gather_helper = context_gather_helper
+        self.grep_search_usecase = grep_search_usecase
+        
     async def context_from_rag(self, user_query_data: Dict[str, Any]) -> str:
         query = user_query_data["query"]
         codebase_path = user_query_data["codebase_path"]
@@ -90,3 +95,8 @@ class UserQueryHelper:
             error_message = f"Error processing query: {str(e)}"
             print(error_message)
             return f"Failed to retrieve context from repository map. Error: {str(e)}"
+        
+    async def context_from_grep_search(self, user_query_data: Dict[str, Any]) -> str:
+
+        result = await self.grep_search_usecase.execute(user_query_data)
+        return result

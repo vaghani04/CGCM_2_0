@@ -120,7 +120,7 @@ class CodebaseIndexingUseCase:
             pinecone_result = {"upserted_count": 0, "batches_processed": 0}
 
             codebase_path_hash_special_hash = calculate_special_hash(codebase_path_name)
-            pinecone_index_name = f"{codebase_dir_path.replace('_', '-')}-{codebase_path_hash_special_hash}"
+            pinecone_index_name = f"{codebase_dir_path.lower().replace('_', '-')}-{codebase_path_hash_special_hash}"
             if all_chunks_for_pinecone:
                 pinecone_result = await self.codebase_indexing_service.upsert_chunks_to_pinecone(
                     pinecone_index_name, all_chunks_for_pinecone, git_branch

@@ -562,7 +562,7 @@ class CodebaseIndexingService:
 
             codebase_dir_path = codebase_path_name.split('/')[-1]
             codebase_path_hash_special_hash = calculate_special_hash(codebase_path_name)
-            pinecone_index_name = f"{codebase_dir_path.replace('_', '-')}-{codebase_path_hash_special_hash}"
+            pinecone_index_name = f"{codebase_dir_path.lower().replace('_', '-')}-{codebase_path_hash_special_hash}"
             index_host = await self._get_or_create_pinecone_index(
                 pinecone_index_name
             )
