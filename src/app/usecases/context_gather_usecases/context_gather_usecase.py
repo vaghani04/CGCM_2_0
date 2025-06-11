@@ -34,9 +34,9 @@ class ContextGatherUseCase:
             Dictionary with statistics and results
         """
         # Get git branch name
-        # git_branch_name = await self.context_gather_helper.get_current_branch_name(codebase_path)
+        git_branch_name = await self.context_gather_helper.get_current_branch_name(codebase_path)
 
-        # stats = await self.context_gather_helper.chunking_and_storage(codebase_path, git_branch_name)
+        stats = await self.context_gather_helper.chunking_and_storage(codebase_path, git_branch_name)
 
-        repo_map = await self.context_gather_helper.generate_repo_map(codebase_path)
-        return repo_map
+        # repo_map = await self.context_gather_helper.generate_repo_map(codebase_path)
+        return stats

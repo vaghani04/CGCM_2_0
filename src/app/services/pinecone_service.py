@@ -271,6 +271,7 @@ class PineconeService:
         namespace: str = "default",
     ):
 
+        print(f"Index host: {index_host}")
         headers = {
             "Api-Key": self.pinecone_api_key,
             "Content-Type": "application/json",
@@ -278,7 +279,7 @@ class PineconeService:
         }
 
         payload = {
-            "namespace": "admin@gmail.com-observability_task",
+            "namespace": namespace,
             "vector": vector,
             "topK": top_k,
             "includeValues": False,
@@ -357,6 +358,7 @@ class PineconeService:
                     status_code=400,
                     detail=f"Host not found in index details for {index_name}",
                 )
+            print(f"Index details: {index_details['host']}")
             return index_details["host"]
         except HTTPException:
             raise

@@ -9,7 +9,6 @@ testing/
 .cgcm/
 struct_logs/
 .cursor/
-outputs/
 intermediate_outputs/
 temp/
 problem_statement_and_system_working.md

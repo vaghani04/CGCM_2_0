@@ -124,14 +124,14 @@ class CodebaseIndexingService:
         """Process a batch of content for embeddings"""
         async with self.semaphore:
             try:
-                import random
-                embeddings = []
-                for content in contents:
-                    # Generate random embedding vector with specified dimension
-                    dummy_embedding = [random.random() for _ in range(self.embeddings_dimension)]
-                    embeddings.append(dummy_embedding)
+                # import random
+                # embeddings = []
+                # for content in contents:
+                #     # Generate random embedding vector with specified dimension
+                #     dummy_embedding = [random.random() for _ in range(self.embeddings_dimension)]
+                #     embeddings.append(dummy_embedding)
                 
-                return embeddings
+                # return embeddings
                 embeddings = (
                     await self.embedding_service.voyageai_dense_embeddings(
                         self.embeddings_model_name, self.embeddings_dimension, contents

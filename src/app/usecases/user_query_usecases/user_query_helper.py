@@ -3,16 +3,31 @@ import os
 from fastapi import Depends
 from src.app.services.context_assembly_service import ContextAssemblyService
 from src.app.usecases.user_query_usecases.repo_map_usecase import RepoMapUsecase
+from src.app.usecases.user_query_usecases.rag_retrieval_usecase import RAGRetrievalUsecase
 from typing import Dict, Any
-
+from src.app.utils.hash_calculator import calculate_special_hash
 class UserQueryHelper:
     def __init__(self,
                 context_assembly_service: ContextAssemblyService = Depends(ContextAssemblyService),
                 repo_map_usecase: RepoMapUsecase = Depends(RepoMapUsecase),
+                rag_retrieval_usecase: RAGRetrievalUsecase = Depends(RAGRetrievalUsecase),
     ):
         self.context_assembly_service = context_assembly_service
         self.repo_map_usecase = repo_map_usecase
-        
+        self.rag_retrieval_usecase = rag_retrieval_usecase
+    async def context_from_rag(self, user_query_data: Dict[str, Any]) -> str:
+        query = user_query_data["query"]
+        codebase_path = user_query_data["codebase_path"]
+        target_directories = user_query_data.get("target_directories", [])
+
+        codebase_path_hash = calculate_special_hash(codebase_path)
+        codebase_dir_path = codebase_path.split('/')[-1]
+        index_name = f"{codebase_dir_path.replace('_', '-')}-{codebase_path_hash}"
+
+        context = await self.rag_retrieval_usecase.rag_retrieval(query, index_name, target_directories)
+        return context
+
+
     async def context_from_repo_map(self, user_query_data: Dict[str, Any]) -> str:
         """
         Process a natural language query and retrieve relevant context from the repository map in GraphDB.
@@ -55,13 +70,6 @@ class UserQueryHelper:
             # with open("intermediate_outputs/cypher_queries_execution_results.json", "r") as f:
             #     results = json.load(f)
             
-            # Process and structure the results
-            # structured_results = {
-            #     "found": ,
-            #     "results": results,
-            #     "query_count": len(cypher_queries),
-            #     "template_used": "llm_generated"  # For compatibility with existing code
-            # }
             
             # Assemble the final context
             print(f"Assembling context from {len(results.get('results', []))} results")
