@@ -50,6 +50,11 @@ const ChatPage = () => {
 
     const currentQuery = query;
     setQuery('');
+    
+    // Reset textarea height after clearing
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+    }
 
     try {
       const response = await contextService.submitUserQuery(currentQuery, state.codebasePath);
@@ -89,6 +94,26 @@ const ChatPage = () => {
       e.preventDefault();
       handleSubmit(e);
     }
+  };
+
+  // Auto-resize textarea
+  const handleInputChange = (e) => {
+    const textarea = e.target;
+    setQuery(e.target.value);
+    
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+    
+    // Calculate the new height based on content
+    const lineHeight = 24; // Approximate line height
+    const maxLines = 4;
+    const minHeight = lineHeight;
+    const maxHeight = lineHeight * maxLines;
+    
+    const scrollHeight = textarea.scrollHeight;
+    const newHeight = Math.min(Math.max(scrollHeight, minHeight), maxHeight);
+    
+    textarea.style.height = `${newHeight}px`;
   };
 
   const clearChat = () => {
@@ -137,7 +162,7 @@ const ChatPage = () => {
   if (!state.codebasePath) {
     return (
       <div className={styles.chatPage}>
-        <div className="container">
+        <div className={styles.chatPageContainer}>
           <div className={styles.errorState}>
             <AlertCircle size={48} />
             <h2>No Codebase Selected</h2>
@@ -150,7 +175,7 @@ const ChatPage = () => {
 
   return (
     <div className={styles.chatPage}>
-      <div className="container">
+      <div className={styles.chatPageContainer}>
         <div className={styles.chatHeader}>
           <div className={styles.headerInfo}>
             <MessageSquare className={styles.headerIcon} />
@@ -230,7 +255,7 @@ const ChatPage = () => {
               <textarea
                 ref={inputRef}
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={handleInputChange}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask a question about your codebase..."
                 className={styles.queryInput}
