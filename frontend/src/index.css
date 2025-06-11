@@ -1,0 +1,20 @@
+/* Import our global styles */
+@import './styles/globals.css';
+
+/* Remove default margins and paddings */
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+}
+
+

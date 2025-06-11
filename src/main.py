@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 
 from src.app.config.database import mongodb_database
 from src.app.middlewares.path_validation_middleware import PathValidationMiddleware
@@ -20,7 +21,30 @@ async def db_lifespan(app: FastAPI):
 
 app = FastAPI(title="My FastAPI Application", lifespan=db_lifespan)
 
-# Add middlewares
+# Add middleware to log all requests
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    print(f"\n🌐 Incoming request:")
+    print(f"   Method: {request.method}")
+    print(f"   URL: {request.url}")
+    print(f"   Client: {request.client}")
+    print(f"   Headers: {dict(request.headers)}")
+    
+    response = await call_next(request)
+    
+    print(f"   📨 Response: {response.status_code}")
+    return response
+
+# Add CORS middleware to handle browser preflight requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174"],  # Frontend URLs
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
+
+# Add other middlewares
 app.add_middleware(PathValidationMiddleware)
 
 # Include routers

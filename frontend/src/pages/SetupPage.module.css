@@ -1,0 +1,276 @@
+.setupPage {
+  min-height: 100vh;
+  padding: 2rem 0;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+.setupContent {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.setupHeader {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.headerIcon {
+  color: var(--accent-primary);
+  margin-bottom: 1rem;
+}
+
+.setupTitle {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.setupDescription {
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.setupCard {
+  margin-bottom: 2rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.inputError {
+  border-color: var(--error) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.errorMessage {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--error);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.setupActions {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.processButton {
+  min-width: 200px;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.processButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.processButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+/* Status Card */
+.statusCard {
+  padding: 2rem;
+  border-radius: 0.75rem;
+  border: 2px solid;
+  margin-bottom: 3rem;
+  transition: all 0.3s ease;
+}
+
+.statusReady {
+  border-color: var(--border-color);
+  background-color: var(--bg-secondary);
+}
+
+.statusLoading {
+  border-color: var(--warning);
+  background-color: var(--bg-secondary);
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.1);
+}
+
+.statusSuccess {
+  border-color: var(--success);
+  background-color: var(--bg-secondary);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
+}
+
+.statusError {
+  border-color: var(--error);
+  background-color: var(--bg-secondary);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.1);
+}
+
+.statusContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.statusIcon {
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.statusReady .statusIcon {
+  color: var(--text-muted);
+}
+
+.statusLoading .statusIcon {
+  color: var(--warning);
+  animation: pulse 2s infinite;
+}
+
+.statusSuccess .statusIcon {
+  color: var(--success);
+}
+
+.statusError .statusIcon {
+  color: var(--error);
+}
+
+.statusText {
+  flex: 1;
+}
+
+.statusTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.statusMessage {
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.processingSteps {
+  margin-top: 1.5rem;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.stepIndicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--warning);
+  animation: pulse 2s infinite;
+}
+
+/* Setup Info */
+.setupInfo {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  padding: 2rem;
+}
+
+.setupInfo h3 {
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.setupInfo ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.setupInfo li {
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.setupInfo li::before {
+  content: "•";
+  color: var(--accent-primary);
+  position: absolute;
+  left: 0;
+  font-weight: bold;
+}
+
+.setupInfo strong {
+  color: var(--text-primary);
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .setupPage {
+    padding: 1rem 0;
+  }
+  
+  .setupTitle {
+    font-size: 2rem;
+  }
+  
+  .setupDescription {
+    font-size: 1rem;
+  }
+  
+  .statusCard {
+    padding: 1.5rem;
+  }
+  
+  .statusContent {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .statusIcon {
+    align-self: flex-start;
+    margin-top: 0;
+  }
+  
+  .setupInfo {
+    padding: 1.5rem;
+  }
+  
+  .processButton {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .setupTitle {
+    font-size: 1.75rem;
+  }
+  
+  .statusCard {
+    padding: 1rem;
+  }
+  
+  .setupInfo {
+    padding: 1rem;
+  }
+} 

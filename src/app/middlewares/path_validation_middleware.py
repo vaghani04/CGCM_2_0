@@ -25,8 +25,22 @@ class PathValidationMiddleware(BaseHTTPMiddleware):
     ]
     
     async def dispatch(self, request: Request, call_next):
+        # Debug logging
+        print(f"\n🔍 PathValidationMiddleware received:")
+        print(f"   Method: {request.method}")
+        print(f"   URL: {request.url}")
+        print(f"   Headers: {dict(request.headers)}")
+        
+        # Skip validation for OPTIONS requests (CORS preflight)
+        if request.method == "OPTIONS":
+            print(f"   ✅ Skipping validation for OPTIONS request")
+            response = await call_next(request)
+            print(f"   ✅ OPTIONS response status: {response.status_code}")
+            return response
+            
         # Only validate POST requests that might contain codebase_path
         if request.method == "POST" and "context-gather" in str(request.url):
+            print(f"   🔍 Validating POST request to context-gather")
             try:
                 # Get request body
                 body = await request.body()
@@ -52,6 +66,7 @@ class PathValidationMiddleware(BaseHTTPMiddleware):
                 pass
         
         response = await call_next(request)
+        print(f"   📤 Final response status: {response.status_code}")
         return response
     
     def _validate_path_security(self, path: str) -> None:
