@@ -32,7 +32,7 @@ class UserQueryHelper:
         codebase_path_special_hash = calculate_special_hash(codebase_path)
         codebase_path_hash = calculate_hash(codebase_path)
         codebase_dir_path = codebase_path.split('/')[-1]
-        index_name = f"{codebase_dir_path.replace('_', '-')}-{codebase_path_special_hash}"
+        index_name = f"{codebase_dir_path.lower().replace('_', '-')}-{codebase_path_special_hash}"
 
         context = await self.rag_retrieval_usecase.rag_retrieval(query, index_name, target_directories, current_git_branch, codebase_path_hash)
         return context

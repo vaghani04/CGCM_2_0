@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader, AlertCircle, RefreshCw, MessageSquare } from 'lucide-react';
+import { Send, Loader, AlertCircle, RefreshCw, MessageSquare, Copy, ChevronDown, ChevronRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { usePeriodicContextGather } from '../hooks/usePeriodicContextGather';
 import contextService from '../services/contextService';
@@ -9,6 +9,7 @@ const ChatPage = () => {
   const { state, actions } = useApp();
   const [query, setQuery] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [copiedMessageId, setCopiedMessageId] = useState(null);
   const chatContainerRef = useRef(null);
   const inputRef = useRef(null);
   
@@ -28,6 +29,14 @@ const ChatPage = () => {
       inputRef.current.focus();
     }
   }, []);
+
+  // Clear copied status after 2 seconds
+  useEffect(() => {
+    if (copiedMessageId) {
+      const timer = setTimeout(() => setCopiedMessageId(null), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [copiedMessageId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -127,8 +136,145 @@ const ChatPage = () => {
     });
   };
 
+  // Check if content is valid JSON
+  const isValidJSON = (str) => {
+    if (typeof str !== 'string') return false;
+    try {
+      const parsed = JSON.parse(str);
+      return typeof parsed === 'object' && parsed !== null;
+    } catch {
+      return false;
+    }
+  };
+
+  // Copy to clipboard functionality
+  const copyToClipboard = async (content, messageId) => {
+    try {
+      const textToCopy = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
+      await navigator.clipboard.writeText(textToCopy);
+      setCopiedMessageId(messageId);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  // JSON syntax highlighting component
+  const JSONHighlighter = ({ data, isRoot = true }) => {
+    const [collapsed, setCollapsed] = useState({});
+    
+    const toggleCollapse = (path) => {
+      setCollapsed(prev => ({
+        ...prev,
+        [path]: !prev[path]
+      }));
+    };
+
+    const renderValue = (value, key, path = '') => {
+      const currentPath = path ? `${path}.${key}` : key;
+      
+      if (value === null) {
+        return <span className={styles.jsonNull}>null</span>;
+      }
+      
+      if (typeof value === 'boolean') {
+        return <span className={styles.jsonBoolean}>{value.toString()}</span>;
+      }
+      
+      if (typeof value === 'number') {
+        return <span className={styles.jsonNumber}>{value}</span>;
+      }
+      
+      if (typeof value === 'string') {
+        return <span className={styles.jsonString}>"{value}"</span>;
+      }
+      
+      if (Array.isArray(value)) {
+        const isCollapsed = collapsed[currentPath];
+        return (
+          <div className={styles.jsonArray}>
+            <button 
+              className={styles.jsonToggle}
+              onClick={() => toggleCollapse(currentPath)}
+            >
+              {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+              <span className={styles.jsonBracket}>[</span>
+              {isCollapsed && <span className={styles.jsonEllipsis}>...{value.length} items</span>}
+            </button>
+            {!isCollapsed && (
+              <div className={styles.jsonContent}>
+                {value.map((item, index) => (
+                  <div key={index} className={styles.jsonItem}>
+                    <span className={styles.jsonIndex}>{index}:</span>
+                    {renderValue(item, index, currentPath)}
+                    {index < value.length - 1 && <span className={styles.jsonComma}>,</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+            {!isCollapsed && <span className={styles.jsonBracket}>]</span>}
+          </div>
+        );
+      }
+      
+      if (typeof value === 'object') {
+        const keys = Object.keys(value);
+        const isCollapsed = collapsed[currentPath];
+        return (
+          <div className={styles.jsonObject}>
+            <button 
+              className={styles.jsonToggle}
+              onClick={() => toggleCollapse(currentPath)}
+            >
+              {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+              <span className={styles.jsonBracket}>{"{"}</span>
+              {isCollapsed && <span className={styles.jsonEllipsis}>...{keys.length} keys</span>}
+            </button>
+            {!isCollapsed && (
+              <div className={styles.jsonContent}>
+                {keys.map((objKey, index) => (
+                  <div key={objKey} className={styles.jsonItem}>
+                    <span className={styles.jsonKey}>"{objKey}":</span>
+                    {renderValue(value[objKey], objKey, currentPath)}
+                    {index < keys.length - 1 && <span className={styles.jsonComma}>,</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+            {!isCollapsed && <span className={styles.jsonBracket}>{"}"}</span>}
+          </div>
+        );
+      }
+      
+      return <span>{String(value)}</span>;
+    };
+
+    return (
+      <div className={styles.jsonHighlighter}>
+        {renderValue(data, 'root')}
+      </div>
+    );
+  };
+
   const renderMessage = (message) => {
     const messageClass = `${styles.message} ${styles[`message${message.type.charAt(0).toUpperCase() + message.type.slice(1)}`]}`;
+    
+    // Determine if content should be displayed as JSON
+    let isJSONContent = false;
+    let parsedContent = null;
+    
+    if (typeof message.content === 'string') {
+      isJSONContent = isValidJSON(message.content);
+      if (isJSONContent) {
+        try {
+          parsedContent = JSON.parse(message.content);
+        } catch {
+          isJSONContent = false;
+        }
+      }
+    } else if (typeof message.content === 'object') {
+      isJSONContent = true;
+      parsedContent = message.content;
+    }
     
     return (
       <div key={message.id} className={messageClass}>
@@ -137,22 +283,37 @@ const ChatPage = () => {
             {message.type === 'user' ? 'You' : 
              message.type === 'assistant' ? 'CGCM Assistant' : 'Error'}
           </span>
-          <span className={styles.messageTime}>
-            {formatTimestamp(message.timestamp)}
-            {message.timeTaken && (
-              <span className={styles.timeTaken}>
-                • {message.timeTaken}s
-              </span>
-            )}
-          </span>
+          <div className={styles.messageActions}>
+            <span className={styles.messageTime}>
+              {formatTimestamp(message.timestamp)}
+              {message.timeTaken && (
+                <span className={styles.timeTaken}>
+                  • {message.timeTaken}s
+                </span>
+              )}
+            </span>
+            <button
+              className={styles.copyButton}
+              onClick={() => copyToClipboard(message.content, message.id)}
+              title="Copy to clipboard"
+            >
+              <Copy size={16} />
+              {copiedMessageId === message.id && (
+                <span className={styles.copiedText}>Copied!</span>
+              )}
+            </button>
+          </div>
         </div>
         <div className={styles.messageContent}>
-          {typeof message.content === 'string' ? (
-            <pre className={styles.messageText}>{message.content}</pre>
-          ) : (
-            <div className={styles.messageData}>
-              {JSON.stringify(message.content, null, 2)}
+          {isJSONContent ? (
+            <div className={styles.jsonResponse}>
+              <div className={styles.jsonHeader}>
+                <span className={styles.jsonLabel}>JSON Response</span>
+              </div>
+              <JSONHighlighter data={parsedContent} />
             </div>
+          ) : (
+            <pre className={styles.messageText}>{message.content}</pre>
           )}
         </div>
       </div>
