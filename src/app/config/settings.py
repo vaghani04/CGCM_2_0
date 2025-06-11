@@ -23,11 +23,6 @@ class Settings(BaseSettings):
     INDEXING_SIMILARITY_METRIC: str = "dotproduct"
     INDEXING_SEMAPHORE_VALUE: int = 7
 
-    # Codebase indexing settings
-    EMBEDDINGS_BATCH_SIZE: int = 80
-    EMBEDDINGS_DIMENSION: int = 1024
-    EMBEDDINGS_MODEL: str = "voyage-code-3"
-
     # Repository Map settings
     REPO_MAP_OUTPUT_FILE: str = "final_repo_map.json"
     REPO_MAP_SUPPORTED_EXTENSIONS: list = [".py", ".js", ".jsx", ".ts", ".tsx"]
@@ -38,6 +33,16 @@ class Settings(BaseSettings):
     # Voyage Settings
     VOYAGEAI_API_KEY: str = "sdf"
     VOYAGEAI_BASE_URL: str = "https://api.voyageai.com/v1"
+    VOYAGEAI_RERANKING_MODEL: str = "rerank-2"
+    VOYAGEAI_EMBEDDINGS_MODEL: str = "voyage-code-3"
+
+    # Codebase indexing settings
+    EMBEDDINGS_BATCH_SIZE: int = 80
+    EMBEDDINGS_DIMENSION: int = 1024
+    
+    # RAG settings
+    RAG_TOP_K: int = 7
+    RAG_TOP_N: int = 3
 
     # Neo4j Graph Database settings
     NEO4J_URI: str = "bolt://localhost:7687"

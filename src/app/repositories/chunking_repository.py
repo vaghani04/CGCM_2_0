@@ -355,3 +355,22 @@ class ChunkingRepository:
                 status_code=500,
                 detail=f"Error retrieving grouped chunks: {str(e)}",
             )
+
+    async def get_chunk_content_by_fp_sl_git_branch(self, file_path: str, start_line: int, git_branch: str, codebase_path_hash: str) -> Chunk:
+        """Get a chunk by its file path, start line, and git branch"""
+        try:
+            collection = await self._get_or_create_collection(codebase_path_hash)
+
+            chunk = await collection.find_one(
+                {"file_path": file_path, "start_line": start_line, "git_branch": git_branch}
+            )
+            return chunk["content"]
+        
+        except Exception as e:
+            loggers["main"].error(
+                f"Error retrieving chunk by file path, start line, and git branch for codebase {codebase_path_hash}: {str(e)}"
+            )
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error retrieving chunk by file path, start line, and git branch: {str(e)}",
+            )

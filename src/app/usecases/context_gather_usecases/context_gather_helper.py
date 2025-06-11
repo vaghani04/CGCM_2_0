@@ -138,7 +138,7 @@ class ContextGatherHelper:
         stats["total_chunks_created"] = len(all_chunks)
         
         codebase_path_hash = calculate_hash(codebase_path)
-        pinecone_index_name = f"{codebase_path.split('/')[-1].replace('_', '-')}-{codebase_path_hash}"
+        # pinecone_index_name = f"{codebase_path.split('/')[-1].replace('_', '-')}-{codebase_path_hash}"
         data = {
             "codebase_path_name": codebase_path,
             "codebase_path_hash": codebase_path_hash,

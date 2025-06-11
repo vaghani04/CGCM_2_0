@@ -12,6 +12,8 @@ from src.app.services.re_ranking_service import (
     RerankerService,
 )
 from src.app.config.settings import settings
+from src.app.repositories.chunking_repository import ChunkingRepository
+import asyncio
 
 
 class RAGRetrievalUsecase:
@@ -20,19 +22,34 @@ class RAGRetrievalUsecase:
         embedding_service: EmbeddingService = Depends(EmbeddingService),
         pinecone_service: PineconeService = Depends(PineconeService),
         reranker_service: RerankerService = Depends(RerankerService),
+        chunking_repository: ChunkingRepository = Depends(ChunkingRepository),
     ):
         self.embedding_service = embedding_service
         self.pinecone_service = pinecone_service
         self.reranker_service = reranker_service
-        self.embedding_model = "voyage-code-3"
-        self.reranker_model = "rerank-2"
+        self.embedding_model = settings.VOYAGEAI_EMBEDDINGS_MODEL
+        self.reranker_model = settings.VOYAGEAI_RERANKING_MODEL
         self.similarity_metric = settings.INDEXING_SIMILARITY_METRIC
-        self.dimension = 1024
+        self.dimension = settings.EMBEDDINGS_DIMENSION
         self.query_input_type = "query"
-        self.top_k = 15
-        self.top_n = 8
+        self.top_k = settings.RAG_TOP_K
+        self.top_n = settings.RAG_TOP_N
+        self.chunking_repository = chunking_repository
 
-    async def perform_rag(self, query: str, index_name: str, target_directories: list[str]):
+
+    async def fetch_docs_from_mongodb(self, doc_metadata: list[dict], current_git_branch: str, codebase_path_hash: str):
+        tasks = []
+        for doc in doc_metadata:
+            file_path = doc.get("file_path")
+            start_line = doc.get("start_line")
+            task = self.chunking_repository.get_chunk_content_by_fp_sl_git_branch(file_path, start_line, current_git_branch, codebase_path_hash)
+            tasks.append(task)
+        
+        chunks = await asyncio.gather(*tasks)
+        documents = [chunk for chunk in chunks if chunk]
+        return documents
+
+    async def perform_rag(self, query: str, index_name: str, target_directories: list[str], current_git_branch: str, codebase_path_hash: str):
 
         # Step 1: Generate embeddings for the query
         query_embedding = (
@@ -59,6 +76,7 @@ class RAGRetrievalUsecase:
             vector=query_embedding,
             include_metadata=True,
             filter_dict=filter_conditions,
+            namespace=current_git_branch
         )
 
         # return vector_search_results
@@ -69,9 +87,9 @@ class RAGRetrievalUsecase:
             return []
 
         # Step 3: Extract text passages and metadata from results
-        documents = []
+        # documents = []
         doc_metadata = []
-        file_paths = []
+        # file_paths = []
         for match in vector_search_results.get("matches", []):
             if match.get("metadata"):
                 doc_metadata.append(
@@ -85,18 +103,22 @@ class RAGRetrievalUsecase:
                         ),
                         "end_line": match.get("metadata", {}).get(
                             "end_line", "unknown"
-                        ),
-                        "file_name": match.get("metadata", {}).get(
-                            "file_name", "unknown"
-                        ),
+                        )
                     }
                 )
         with open("intermediate_outputs/pinecone_retrieval_results.json", "w") as f:
             json.dump(doc_metadata, f, indent=2)
-        return doc_metadata
+        # return doc_metadata
+
+    
+        # Step 4: fetch the code content from mongodb based on the metadata (file_path, start_line, git_branch)
+        documents = await self.fetch_docs_from_mongodb(doc_metadata, current_git_branch, codebase_path_hash)
 
         if not documents:
             return []
+        
+        with open("intermediate_outputs/documents_fetched_from_mongodb.json", "w") as f:
+            json.dump(documents, f, indent=2)
 
         reranked_results = await self.reranker_service.voyage_rerank(
             self.reranker_model, query, documents, self.top_n
@@ -116,12 +138,14 @@ class RAGRetrievalUsecase:
                 )
 
         full_final_results = final_results
+        with open("intermediate_outputs/rag_retrieval_results.json", "w") as f:
+            json.dump(full_final_results, f, indent=2)
         return full_final_results
 
-    async def rag_retrieval(self, query: str, index_name: str, target_directories: list[str] = []):
+    async def rag_retrieval(self, query: str, index_name: str, target_directories: list[str] = [], current_git_branch: str = "default", codebase_path_hash: str = ""):
         start_time = time.time()
 
-        retrieved_docs = await self.perform_rag(query, index_name, target_directories)
+        retrieved_docs = await self.perform_rag(query, index_name, target_directories, current_git_branch, codebase_path_hash)
 
         # Step 3: Format and return the final response
         end_time = time.time()

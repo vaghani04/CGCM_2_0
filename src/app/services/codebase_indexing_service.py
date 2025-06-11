@@ -28,7 +28,7 @@ class CodebaseIndexingService:
         self.embedding_service = embedding_service
         self.pinecone_service = pinecone_service
 
-        self.embeddings_model_name = settings.EMBEDDINGS_MODEL
+        self.embeddings_model_name = settings.VOYAGEAI_EMBEDDINGS_MODEL
         self.embeddings_dimension = settings.EMBEDDINGS_DIMENSION
         self.similarity_metric = settings.INDEXING_SIMILARITY_METRIC
         self.embeddings_batch_size = settings.EMBEDDINGS_BATCH_SIZE
