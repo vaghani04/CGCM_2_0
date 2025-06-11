@@ -1,5 +1,6 @@
 import subprocess
 import hashlib
+import json
 from fastapi import Depends, HTTPException, status
 import os
 from src.app.services.path_validation_service import PathValidationService
@@ -11,6 +12,7 @@ from src.app.usecases.context_gather_usecases.codebase_indexing_usecase import C
 from src.app.utils.hash_calculator import calculate_special_hash, calculate_hash
 from src.app.services.repo_map_service import RepositoryMapService
 from src.app.usecases.context_gather_usecases.repo_map_graphdb_usecase import RepoMapGraphDBUseCase
+from src.app.utils.path_utils import get_relative_paths
 
 class ContextGatherHelper:
     def __init__(self,
@@ -129,6 +131,11 @@ class ContextGatherHelper:
             
         stats["total_files_processed"] = len(files_to_process)
         
+        with open("intermediate_outputs/files_to_process.json", "w") as f:
+            json.dump(files_to_process, f, indent=2)
+        with open("intermediate_outputs/files_to_delete.json", "w") as f:
+            json.dump(files_to_delete, f, indent=2)
+        
         # Process files and generate chunks
         all_chunks = []
         for file_path in files_to_process:
@@ -138,12 +145,15 @@ class ContextGatherHelper:
         stats["total_chunks_created"] = len(all_chunks)
         
         codebase_path_hash = calculate_hash(codebase_path)
-        # pinecone_index_name = f"{codebase_path.split('/')[-1].replace('_', '-')}-{codebase_path_hash}"
+        
+        # Convert absolute paths in files_to_delete to relative paths
+        relative_files_to_delete = get_relative_paths(files_to_delete, codebase_path)
+        
         data = {
             "codebase_path_name": codebase_path,
             "codebase_path_hash": codebase_path_hash,
             "chunks": all_chunks,
-            "deleted_file_paths": files_to_delete,
+            "deleted_file_paths": relative_files_to_delete,
             "current_git_branch": git_branch_name,
         }
 

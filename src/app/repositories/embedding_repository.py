@@ -29,7 +29,7 @@ class EmbeddingRepository:
             if self.collection_name not in collections:
                 # Create indexes for efficient querying
                 index_models = [
-                    IndexModel([("chunk_hash", 1)], unique=True),
+                    IndexModel([("content_hash", 1)], unique=True),
                     IndexModel([("created_at", -1)]),
                 ]
                 await collection.create_indexes(index_models)
@@ -49,20 +49,20 @@ class EmbeddingRepository:
             )
 
     async def get_embeddings_by_hashes(
-        self, chunk_hashes: List[str]
+        self, content_hashes: List[str]
     ) -> Dict[str, List[float]]:
         """Get embeddings for given chunk hashes"""
         try:
             collection = await self._get_or_create_collection()
 
             cursor = collection.find(
-                {"chunk_hash": {"$in": chunk_hashes}},
-                {"chunk_hash": 1, "embedding": 1, "_id": 0},
+                {"content_hash": {"$in": content_hashes}},
+                {"content_hash": 1, "embedding": 1, "_id": 0},
             )
 
             embeddings_map = {}
             async for doc in cursor:
-                embeddings_map[doc["chunk_hash"]] = doc["embedding"]
+                embeddings_map[doc["content_hash"]] = doc["embedding"]
 
             loggers["main"].info(
                 f"Retrieved {len(embeddings_map)} embeddings from global collection"
@@ -96,7 +96,7 @@ class EmbeddingRepository:
                 embedding_item["created_at"] = datetime.now()
                 operations.append(
                     UpdateOne(
-                        {"chunk_hash": embedding_item["chunk_hash"]},
+                        {"content_hash": embedding_item["content_hash"]},
                         {"$set": embedding_item},
                         upsert=True,
                     )
@@ -118,13 +118,13 @@ class EmbeddingRepository:
                 detail=f"Error storing embeddings: {str(e)}",
             )
 
-    async def delete_embeddings_by_hashes(self, chunk_hashes: List[str]) -> int:
+    async def delete_embeddings_by_hashes(self, content_hashes: List[str]) -> int:
         """Delete embeddings by chunk hashes (optional cleanup)"""
         try:
             collection = await self._get_or_create_collection()
 
             result = await collection.delete_many(
-                {"chunk_hash": {"$in": chunk_hashes}}
+                {"content_hash": {"$in": content_hashes}}
             )
             deleted_count = result.deleted_count
 

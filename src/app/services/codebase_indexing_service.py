@@ -1,4 +1,5 @@
 import asyncio
+import json
 import time
 from datetime import datetime
 from typing import Dict, List, Tuple
@@ -11,6 +12,7 @@ from src.app.repositories.embedding_repository import EmbeddingRepository
 from src.app.services.embedding_service import EmbeddingService
 from src.app.services.pinecone_service import PineconeService
 from src.app.utils.logging_util import loggers
+from src.app.utils.hash_calculator import calculate_special_hash
 
 
 class CodebaseIndexingService:
@@ -40,7 +42,7 @@ class CodebaseIndexingService:
     ) -> Tuple[List[Chunk], List[ChunkData], int]:
         """Identify chunks and prepare them with embeddings from global collection or generate new ones"""
         try:
-            incoming_hashes = [chunk.chunk_hash for chunk in incoming_chunks]
+            incoming_hashes = [chunk.content_hash for chunk in incoming_chunks]
 
             # Get existing embeddings from global collection
             existing_embeddings = (
@@ -54,9 +56,10 @@ class CodebaseIndexingService:
             chunks_with_embeddings = []
 
             for chunk_data in incoming_chunks:
-                if chunk_data.chunk_hash in existing_embeddings:
+                if chunk_data.content_hash in existing_embeddings:
                     chunk = Chunk(
                         chunk_hash=chunk_data.chunk_hash,
+                        content_hash=chunk_data.content_hash,
                         content=chunk_data.content,
                         file_path=chunk_data.file_path,
                         start_line=chunk_data.start_line,
@@ -65,7 +68,7 @@ class CodebaseIndexingService:
                         chunk_type=chunk_data.chunk_type,
                         git_branch=chunk_data.git_branch,
                         token_count=chunk_data.token_count,
-                        embedding=existing_embeddings[chunk_data.chunk_hash],
+                        embedding=existing_embeddings[chunk_data.content_hash],
                         created_at=datetime.now(),
                         updated_at=datetime.now(),
                     )
@@ -90,7 +93,7 @@ class CodebaseIndexingService:
                 for chunk in new_chunks_with_embeddings:
                     embeddings_to_store.append(
                         {
-                            "chunk_hash": chunk.chunk_hash,
+                            "content_hash": chunk.content_hash,
                             "embedding": chunk.embedding,
                         }
                     )
@@ -124,14 +127,15 @@ class CodebaseIndexingService:
         """Process a batch of content for embeddings"""
         async with self.semaphore:
             try:
-                # import random
-                # embeddings = []
-                # for content in contents:
-                #     # Generate random embedding vector with specified dimension
-                #     dummy_embedding = [random.random() for _ in range(self.embeddings_dimension)]
-                #     embeddings.append(dummy_embedding)
+                print("reached here to create dummy embeddings")
+                import random
+                embeddings = []
+                for content in contents:
+                    # Generate random embedding vector with specified dimension
+                    dummy_embedding = [random.random() for _ in range(self.embeddings_dimension)]
+                    embeddings.append(dummy_embedding)
                 
-                # return embeddings
+                return embeddings
                 embeddings = (
                     await self.embedding_service.voyageai_dense_embeddings(
                         self.embeddings_model_name, self.embeddings_dimension, contents
@@ -183,6 +187,7 @@ class CodebaseIndexingService:
             for i, chunk_data in enumerate(new_chunks):
                 chunk = Chunk(
                     chunk_hash=chunk_data.chunk_hash,
+                    content_hash=chunk_data.content_hash,
                     content=chunk_data.content,
                     file_path=chunk_data.file_path,
                     start_line=chunk_data.start_line,
@@ -376,7 +381,8 @@ class CodebaseIndexingService:
             )
 
     async def handle_chunk_level_deletion(
-        self, codebase_path_hash: str, incoming_chunks: List[ChunkData]
+        self, codebase_path_hash: str, incoming_chunks: List[ChunkData], 
+        codebase_path_name: str
     ) -> Tuple[int, int]:
         """Handle deletion of individual chunks that are no longer present"""
         try:
@@ -433,7 +439,7 @@ class CodebaseIndexingService:
                         hashes_to_delete_list = list(hashes_to_delete)
 
                         loggers["main"].info(
-                            f"🗑️  DELETING {len(hashes_to_delete)} chunks for path '{path}' ONLY from branch '{branch}'"
+                            f"DELETING {len(hashes_to_delete)} chunks for path '{path}' ONLY from branch '{branch}'"
                         )
 
                         # Delete from MongoDB codebase collection (branch-specific)
@@ -445,7 +451,7 @@ class CodebaseIndexingService:
                         # Delete from Pinecone (branch-specific namespace)
                         pinecone_deleted = (
                             await self._delete_chunks_from_pinecone(
-                                codebase_path_hash, hashes_to_delete_list, branch
+                                codebase_path_hash, hashes_to_delete_list, branch, codebase_path_name
                             )
                         )
                         pinecone_deleted_count += pinecone_deleted
@@ -479,6 +485,7 @@ class CodebaseIndexingService:
         self,
         codebase_path_hash: str,
         delete_file_paths: List[str],
+        codebase_path_name: str,
         current_git_branch: str = "default",
     ) -> Tuple[int, int]:
         """Handle deletion of chunks for deleted files in specific git branch"""
@@ -494,8 +501,11 @@ class CodebaseIndexingService:
             chunks_to_delete = await self.chunking_repository.get_chunks_by_file_paths_and_branch(
                 codebase_path_hash,
                 delete_file_paths,
-                current_git_branch,
+                current_git_branch
             )
+
+            # with open("intermediate_outputs/chunks_to_delete.json", "w") as f:
+            #     json.dump(chunks_to_delete, f, indent=2)
 
             if not chunks_to_delete:
                 loggers["main"].info(
@@ -526,6 +536,7 @@ class CodebaseIndexingService:
                         codebase_path_hash,
                         chunk_hashes_to_delete,
                         current_git_branch,
+                        codebase_path_name
                     )
                 )
 
@@ -538,19 +549,22 @@ class CodebaseIndexingService:
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error handling deleted files: {str(e)}",
+                detail=f"Error handling deleted files in codebase_indexing_service: {str(e)}",
             )
 
     async def _delete_chunks_from_pinecone(
-        self, codebase_path_hash: str, chunk_hashes: List[str], git_branch: str
+        self, codebase_path_hash: str, chunk_hashes: List[str], git_branch: str, codebase_path_name: str
     ) -> int:
         """Delete specific chunks from Pinecone by hash"""
         try:
             if not chunk_hashes:
                 return 0
 
+            codebase_dir_path = codebase_path_name.split('/')[-1]
+            codebase_path_hash_special_hash = calculate_special_hash(codebase_path_name)
+            pinecone_index_name = f"{codebase_dir_path.replace('_', '-')}-{codebase_path_hash_special_hash}"
             index_host = await self._get_or_create_pinecone_index(
-                codebase_path_hash
+                pinecone_index_name
             )
 
             # Use git_branch as namespace

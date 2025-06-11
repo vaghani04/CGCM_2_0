@@ -75,6 +75,7 @@ class CodebaseIndexingUseCase:
                     await self.codebase_indexing_service.handle_deleted_files(
                         codebase_path_hash,
                         deleted_file_paths,
+                        codebase_path_name,
                         current_git_branch,
                     )
                 )
@@ -87,7 +88,7 @@ class CodebaseIndexingUseCase:
             ):  # Only check for chunk deletion if we have incoming chunks
                 deleted_chunks_count, pinecone_deleted_chunks_count = (
                     await self.codebase_indexing_service.handle_chunk_level_deletion(
-                        codebase_path_hash, chunk_objects
+                        codebase_path_hash, chunk_objects, codebase_path_name
                     )
                 )
 

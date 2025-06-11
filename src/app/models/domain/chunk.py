@@ -6,6 +6,7 @@ class Chunk:
     def __init__(
         self,
         chunk_hash: str,
+        content_hash: str,
         content: str,
         file_path: str,
         start_line: int,
@@ -20,6 +21,7 @@ class Chunk:
         updated_at: Optional[datetime] = None,
     ):
         self.chunk_hash = chunk_hash
+        self.content_hash = content_hash
         self.content = content
         self.file_path = file_path
         self.start_line = start_line
@@ -36,6 +38,7 @@ class Chunk:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "chunk_hash": self.chunk_hash,
+            "content_hash": self.content_hash,
             "content": self.content,
             "file_path": self.file_path,
             "start_line": self.start_line,
@@ -72,6 +75,7 @@ class Chunk:
 
         return cls(
             chunk_hash=data["chunk_hash"],
+            content_hash=data["content_hash"],
             content=data["content"],
             file_path=data["file_path"],
             start_line=data["start_line"],

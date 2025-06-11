@@ -52,16 +52,16 @@ class RAGRetrievalUsecase:
     async def perform_rag(self, query: str, index_name: str, target_directories: list[str], current_git_branch: str, codebase_path_hash: str):
 
         # Step 1: Generate embeddings for the query
-        query_embedding = (
-            await self.embedding_service.voyageai_dense_embeddings(
-                self.embedding_model,
-                dimension=self.dimension,
-                inputs=[query],
-                input_type=self.query_input_type,
-            )
-        )
-        # query_embedding = [random.random() for _ in range(self.dimension)]
-        query_embedding = query_embedding[0]
+        # query_embedding = (
+        #     await self.embedding_service.voyageai_dense_embeddings(
+        #         self.embedding_model,
+        #         dimension=self.dimension,
+        #         inputs=[query],
+        #         input_type=self.query_input_type,
+        #     )
+        # )
+        # query_embedding = query_embedding[0]
+        query_embedding = [random.random() for _ in range(self.dimension)]
 
         # Step 2: Query Pinecone with the embeddings
         # Create metadata filter based on target directories if provided

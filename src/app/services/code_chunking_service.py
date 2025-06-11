@@ -1,5 +1,6 @@
 import os
 import hashlib
+import json
 from typing import List, Dict
 from fastapi import Depends
 from chonkie import CodeChunker
@@ -13,25 +14,7 @@ class CodeChunkingService:
             '.js': 'javascript',
             '.ts': 'typescript',
             '.jsx': 'javascript',
-            '.tsx': 'typescript',
-            '.java': 'java',
-            '.c': 'c',
-            '.cpp': 'cpp',
-            '.h': 'c',
-            '.hpp': 'cpp',
-            '.go': 'go',
-            '.rb': 'ruby',
-            '.php': 'php',
-            '.rs': 'rust',
-            '.swift': 'swift',
-            '.kt': 'kotlin',
-            '.scala': 'scala',
-            '.html': 'html',
-            '.css': 'css',
-            '.json': 'json',
-            '.md': 'markdown',
-            '.yaml': 'yaml',
-            '.yml': 'yaml',
+            '.tsx': 'typescript'
         }
         
     
@@ -138,19 +121,21 @@ class CodeChunkingService:
             
             chunker = CodeChunker(language=language, include_nodes=True, tokenizer_or_token_counter="gpt2")
             chunks = chunker.chunk(text = content)
-            
+
             # Process chunks into our format
             result_chunks = []
             for chunk in chunks:
-                # Calculate hash for the chunk content
-                # chunk_hash = calculate_hash(chunk.text)
-                chunk_hash = hashlib.sha256(chunk.text.encode('utf-8')).hexdigest()
-                
                 # Calculate line numbers
                 start_line, end_line = self.calculate_line_numbers(
                     content, chunk.start_index, chunk.end_index
                 )
+
+                # Calculate hash for the chunk content
+                chunk_hash_string = f"{file_path}:{start_line}:{end_line}:{chunk.text}"
+                chunk_hash = hashlib.sha256(chunk_hash_string.encode('utf-8')).hexdigest()
                 
+                content_hash = hashlib.sha256(chunk.text.encode('utf-8')).hexdigest()
+
                 # Determine chunk type
                 chunk_type = self.determine_chunk_type(chunk.nodes if hasattr(chunk, 'nodes') else [])
                 
@@ -160,6 +145,7 @@ class CodeChunkingService:
                 # Create chunk dictionary
                 chunk_dict = {
                     "chunk_hash": chunk_hash,
+                    "content_hash": content_hash,
                     "content": chunk.text,
                     "file_path": relative_path,
                     "start_line": start_line,
