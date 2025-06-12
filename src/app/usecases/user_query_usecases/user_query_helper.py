@@ -9,6 +9,7 @@ from src.app.utils.hash_calculator import calculate_special_hash, calculate_hash
 from src.app.usecases.context_gather_usecases.context_gather_helper import ContextGatherHelper
 from src.app.usecases.user_query_usecases.grep_search_usecase import GrepSearchUsecase
 from src.app.models.schemas.grep_search_query_schema import GrepSearchQueryRequest
+from src.app.usecases.user_query_usecases.nl_search_usecase import NLSearchUsecase
 
 class UserQueryHelper:
     def __init__(self,
@@ -17,13 +18,22 @@ class UserQueryHelper:
                 rag_retrieval_usecase: RAGRetrievalUsecase = Depends(RAGRetrievalUsecase),
                 context_gather_helper: ContextGatherHelper = Depends(ContextGatherHelper),
                 grep_search_usecase: GrepSearchUsecase = Depends(GrepSearchUsecase),
+                nl_search_usecase: NLSearchUsecase = Depends(NLSearchUsecase),
     ):
         self.context_assembly_service = context_assembly_service
         self.repo_map_usecase = repo_map_usecase
         self.rag_retrieval_usecase = rag_retrieval_usecase
         self.context_gather_helper = context_gather_helper
         self.grep_search_usecase = grep_search_usecase
-        
+        self.nl_search_usecase = nl_search_usecase
+    async def context_from_nl_insights(self, user_query_data: Dict[str, Any]) -> str:
+        current_git_branch = await self.context_gather_helper.get_current_branch_name(user_query_data["codebase_path"])
+        user_query_data["current_git_branch"] = current_git_branch
+
+        nl_context = await self.nl_search_usecase.nl_search(user_query_data)
+        return nl_context
+
+
     async def context_from_rag(self, user_query_data: Dict[str, Any]) -> str:
         query = user_query_data["query"]
         codebase_path = user_query_data["codebase_path"]
