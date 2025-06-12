@@ -165,7 +165,7 @@ class FileStorageService:
                 detail=f"Error retrieving merkle tree from file: {str(e)}"
             )
         
-    async def store_nl_insights(self, key: str, insights: Dict):
+    async def store_in_file_storage(self, key: str, insights: Dict | str, file_name: str):
         """
         Store natural language insights in a JSON file
         """
@@ -180,7 +180,7 @@ class FileStorageService:
             workspace_basename = os.path.basename(workspace_path.rstrip('/'))
             storage_key = f"{workspace_basename}_{git_branch}"
             workspace_dir = self._get_workspace_dir(workspace_path)
-            file_path = workspace_dir / "nl_insights.json"
+            file_path = workspace_dir / f"{file_name}"
             
             data = {}
             if file_path.exists():
@@ -198,7 +198,7 @@ class FileStorageService:
                 detail=f"Error storing merkle tree in file: {str(e)}"
             )
         
-    async def get_nl_insights(self, key: str) -> Optional[Tuple[Any, Dict]]:
+    async def get_from_file_storage(self, key: str, file_name: str) -> Optional[Tuple[Any, Dict]]:
         """
         Retrieve merkle tree and file hashes from file storage
         
@@ -220,7 +220,7 @@ class FileStorageService:
 
             workspace_dir = self._get_workspace_dir(workspace_path)
 
-            file_path = workspace_dir / "nl_insights.json"
+            file_path = workspace_dir / f"{file_name}"
 
             if not file_path.exists():
                 return None

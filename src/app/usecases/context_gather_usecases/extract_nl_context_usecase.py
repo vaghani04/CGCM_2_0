@@ -1,22 +1,49 @@
 import json
-from typing import Dict, Any, Optional
+import asyncio
+from typing import Dict, Any, Optional, List
 from fastapi import Depends
 from src.app.services.codebase_info_extraction_service import CodebaseInfoExtractionService
 from src.app.services.openai_service import OpenAIService
 from src.app.services.file_storage_service import FileStorageService
+from src.app.services.graphdb_query_service import GraphDBQueryService
 from src.app.prompts.nl_context_extraction_prompt import GEN_NL_CONTEXT_SYSTEM_PROMPT, GEN_NL_CONTEXT_USER_PROMPT
 from src.app.utils.response_parser import parse_response
-
-
+from src.app.usecases.user_query_usecases.repo_map_usecase import RepoMapUsecase
+from src.app.config.test_queries import NL_CONTEXT_QUERIES
 class ExtractNLContextUseCase:
     def __init__(self,
                 codebase_info_extraction_service: CodebaseInfoExtractionService = Depends(CodebaseInfoExtractionService),
                 openai_service: OpenAIService = Depends(OpenAIService),
                 file_storage_service: FileStorageService = Depends(FileStorageService),
+                graphdb_query_service: GraphDBQueryService = Depends(GraphDBQueryService),
+                repo_map_usecase: RepoMapUsecase = Depends(RepoMapUsecase),
                 ):
         self.codebase_info_extraction_service = codebase_info_extraction_service
         self.openai_service = openai_service
         self.file_storage_service = file_storage_service
+        self.graphdb_query_service = graphdb_query_service
+        self.repo_map_usecase = repo_map_usecase
+    async def extract_nl_context_from_repo_map(self, codebase_path: str, git_branch_name: str) -> Dict[str, Any]:
+        """
+        Extract natural language context from codebase using repomap's cypher queries executions
+        """
+        try:
+            nl_context_queries = NL_CONTEXT_QUERIES
+            # Execute all queries in parallel
+            print(f"Executing {len(nl_context_queries)} cypher queries in parallel...")
+            
+            results = await self.repo_map_usecase._execute_queries_parallel(nl_context_queries)
+
+            return results
+            
+        except Exception as e:
+            print(f"Error extracting NL context from repo map: {e}")
+            return {
+                "success": False,
+                "error": f"Error extracting NL context from repo map: {str(e)}",
+                "nl_context": None
+            }
+
 
     async def extract_nl_context(self, codebase_path: str, git_branch_name: str) -> Dict[str, Any]:
         """
@@ -30,26 +57,42 @@ class ExtractNLContextUseCase:
         """
         try:
 
-            # print("Extracting codebase information...")
-            codebase_info = await self.codebase_info_extraction_service.extract_codebase_info(codebase_path)
+            print("Extracting codebase information...")
+            codebase_info_task = self.codebase_info_extraction_service.extract_codebase_info(codebase_path, git_branch_name)
+            codebase_info_from_repo_map_task = self.extract_nl_context_from_repo_map(codebase_path, git_branch_name)
+
+            # Create Tasks from the coroutines so we can check their status
+            task1 = asyncio.create_task(codebase_info_task)
+            task2 = asyncio.create_task(codebase_info_from_repo_map_task)
+
+            # Wait for first task to complete
+            codebase_info, is_previous_usable = await task1
+            
+            # If first task indicates we can use previous data, cancel second task and return
+            if is_previous_usable:
+                # Cancel the second task if it's not done
+                if not task2.done():
+                    task2.cancel()
+                return {
+                    "success": True,
+                    "error": None,
+                    "insights_file_path": None,
+                    "codebase_info": codebase_info
+                }
+
+            # If we need new data, wait for second task
+            codebase_info_from_repo_map = await task2
 
             print("Analyzing codebase with LLM...")
-            insights = await self._generate_insights_with_llm(codebase_path, codebase_info)
-
-            # with open("intermediate_outputs/nl_context_gather_outputs/parsed_llm_response.json", "r") as f:
-            #     insights = json.load(f)
+            insights = await self._generate_insights_with_llm(codebase_path, codebase_info, codebase_info_from_repo_map)
 
             print("Storing insights...")
             await self._store_insights(codebase_path, git_branch_name, insights)
 
+            print("Generating statistics...")
             stats = self._generate_statistics(insights, codebase_info)
-            
+
             return stats
-            # return {
-            #     "success": True,
-            #     "message": "Natural language context extracted successfully",            #     "insights": insights,
-            #     "statistics": stats
-            # }
             
         except Exception as e:
             return {
@@ -58,7 +101,7 @@ class ExtractNLContextUseCase:
                 "insights_file_path": None
             }
 
-    async def _generate_insights_with_llm(self, codebase_path: str, codebase_info: Dict[str, Any]) -> Dict[str, Any]:
+    async def _generate_insights_with_llm(self, codebase_path: str, codebase_info: Dict[str, Any], codebase_info_from_repo_map: Dict[str, Any]) -> Dict[str, Any]:
         """Generate insights using LLM analysis"""
         try:
 
@@ -66,7 +109,8 @@ class ExtractNLContextUseCase:
                 directory_structure=codebase_info.get("directory_structure", "Not available"),
                 code_patterns=codebase_info.get("code_patterns", "Not available"),
                 documentation_content=codebase_info.get("documentation_content", "Not available"),
-                codebase_path=codebase_path
+                codebase_path=codebase_path,
+                codebase_info_from_repo_map=codebase_info_from_repo_map
             )
 
             response = await self.openai_service.completions(
@@ -95,7 +139,7 @@ class ExtractNLContextUseCase:
         try:
             # Create storage key similar to merkle tree storage
             storage_key = f"{codebase_path}:{git_branch_name}"
-            await self.file_storage_service.store_nl_insights(storage_key, insights)
+            await self.file_storage_service.store_in_file_storage(storage_key, insights, file_name="nl_insights.json")
             
         except Exception as e:
             raise Exception(f"Failed to store insights: {str(e)}")
@@ -120,6 +164,7 @@ class ExtractNLContextUseCase:
     def _generate_statistics(self, insights: Dict[str, Any], codebase_info: Dict[str, Any]) -> Dict[str, Any]:
         """Generate statistics about the extracted insights"""
         stats = {
+            "used_from_stored_data": False,
             "total_features": len(insights.get("features", [])),
             "total_functional_requirements": 0,
             "total_non_functional_requirements": 0,

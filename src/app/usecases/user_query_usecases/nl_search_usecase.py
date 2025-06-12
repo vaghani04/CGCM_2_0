@@ -21,7 +21,7 @@ class NLSearchUsecase:
         codebase_path = data["codebase_path"]
         current_git_branch = data["current_git_branch"]
         storage_key = f"{codebase_path}:{current_git_branch}"
-        nl_insights = await self.file_storage_service.get_nl_insights(storage_key)
+        nl_insights = await self.file_storage_service.get_from_file_storage(storage_key, file_name="nl_insights.json")
         return nl_insights
 
     async def query_specific_nl_search(self, data: Dict[str, Any]):

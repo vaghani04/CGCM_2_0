@@ -1,45 +1,85 @@
 import asyncio
 import os
 import subprocess
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple
 from pathlib import Path
 from src.app.config.settings import settings
-
+import json
+from src.app.services.file_storage_service import FileStorageService
+from fastapi import Depends
+from difflib import SequenceMatcher
 
 class CodebaseInfoExtractionService:
     """Service to extract targeted information from codebase using smart grep commands"""
     
-    def __init__(self):
+    def __init__(self, file_storage_service: FileStorageService = Depends(FileStorageService)):
         self.supported_extensions = settings.NL_INSIGHTS_SUPPORTED_EXTENSIONS
         self.excluded_dirs = settings.REPO_MAP_EXCLUDED_DIRS
-        
-    async def extract_codebase_info(self, codebase_path: str) -> Dict[str, Any]:
+        self.file_storage_service = file_storage_service
+
+
+    def normalize_content(self, content):
+        """Normalize JSON or text content for comparison."""
+        try:
+            # Try to parse as JSON and sort keys
+            obj = json.loads(content)
+            return json.dumps(obj, sort_keys=True)
+        except Exception:
+            # Fallback: treat as plain text
+            return content.strip().replace('\r\n', '\n').replace('\r', '\n')
+
+    def calculate_similarity(self, a, b):
+        """Return similarity ratio between two strings (0 to 1)."""
+        return SequenceMatcher(None, a, b).ratio()
+
+    def is_similar_enough(self, content1, content2, threshold=0.75):
+        norm1 = self.normalize_content(content1)
+        norm2 = self.normalize_content(content2)
+        similarity = self.calculate_similarity(norm1, norm2)
+        return similarity >= threshold, similarity
+
+    async def extract_codebase_info(self, codebase_path: str, git_branch_name: str) -> Tuple[Dict[str, Any], bool]:
         """
         Extract comprehensive information from codebase using targeted approaches
         
         Args:
             codebase_path: Path to the codebase
+            git_branch_name: Name of the git branch
             
         Returns:
-            Dictionary containing extracted information
+            Tuple containing:
+            - Dictionary with extracted information
+            - Boolean indicating if we can use previous data
         """
         try:
             directory_structure = await self.get_directory_structure(codebase_path, depth=4)
-
             code_patterns = await self._extract_code_patterns(codebase_path)
+            previous_data = await self.file_storage_service.get_from_file_storage(f"{codebase_path}:{git_branch_name}", file_name="code_patterns.json")
+
+            if code_patterns and previous_data:
+                is_similar, similarity_score = self.is_similar_enough(code_patterns, previous_data, threshold=0.75)
+                if is_similar:
+                    return {
+                        "directory_structure": directory_structure,
+                        "code_patterns": code_patterns,
+                        "documentation_content": "documentation_content"
+                    }, True
+
+            # If not similar, continue with full extraction
+            await self.file_storage_service.store_in_file_storage(f"{codebase_path}:{git_branch_name}", code_patterns, file_name="code_patterns.json")
             documentation_content = await self._extract_documentation(codebase_path)
 
             return {
                 "directory_structure": directory_structure,
                 "code_patterns": code_patterns,
                 "documentation_content": documentation_content
-            }
+            }, False  # Return False to indicate we need new data
         except Exception as e:
             return {
                 "directory_structure": f"Error extracting directory structure: {str(e)}",
                 "code_patterns": f"Error extracting code patterns: {str(e)}",
                 "documentation_content": f"Error extracting documentation: {str(e)}"
-            }
+            }, False
     
     async def get_directory_structure(self, codebase_path: str, depth: int = 2) -> str:
         """
