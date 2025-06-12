@@ -24,17 +24,7 @@ class RepositoryMapService:
             '.js': LanguageType.JAVASCRIPT,
             '.jsx': LanguageType.JAVASCRIPT,
             '.ts': LanguageType.TYPESCRIPT,
-            '.tsx': LanguageType.TYPESCRIPT,
-            '.java': LanguageType.JAVA,
-            '.cpp': LanguageType.CPP,
-            '.c': LanguageType.C,
-            '.h': LanguageType.C,
-            '.hpp': LanguageType.CPP,
-            '.cs': LanguageType.CSHARP,
-            '.go': LanguageType.GO,
-            '.rb': LanguageType.RUBY,
-            '.php': LanguageType.PHP,
-            '.rs': LanguageType.RUST
+            '.tsx': LanguageType.TYPESCRIPT
         }
         
     async def generate_repository_map(self, codebase_path: str, output_file: Optional[str] = None) -> Dict:

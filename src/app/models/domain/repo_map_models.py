@@ -7,15 +7,6 @@ class LanguageType(Enum):
     PYTHON = "python"
     JAVASCRIPT = "javascript"
     TYPESCRIPT = "typescript"
-    JAVA = "java"
-    CPP = "cpp"
-    C = "c"
-    CSHARP = "csharp"
-    GO = "go"
-    RUBY = "ruby"
-    PHP = "php"
-    RUST = "rust"
-    UNKNOWN = "unknown"
 
 
 class FunctionVisibility(Enum):
