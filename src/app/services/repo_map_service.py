@@ -124,6 +124,11 @@ class RepositoryMapService:
         language = self.supported_extensions.get(extension, LanguageType.UNKNOWN)
         
         try:
+            # Check if file exists first
+            if not file_path.exists():
+                print(f"Warning: File does not exist: {file_path}")
+                return None
+                
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                 content = f.read()
             
@@ -145,8 +150,17 @@ class RepositoryMapService:
                     lines_of_code=len(content.splitlines())
                 )
         
+        except FileNotFoundError as e:
+            print(f"Warning: File not found: {file_path} - {e}")
+            return None
+        except PermissionError as e:
+            print(f"Warning: Permission denied: {file_path} - {e}")
+            return None
+        except UnicodeDecodeError as e:
+            print(f"Warning: Unicode decode error in file {file_path}: {e}")
+            return None
         except Exception as e:
-            print(f"Error analyzing file {file_path}: {e}")
+            print(f"Warning: Error analyzing file {file_path}: {type(e).__name__}: {e}")
             return None
     
     async def _analyze_python_file(self, file_path: str, content: str) -> FileInfo:

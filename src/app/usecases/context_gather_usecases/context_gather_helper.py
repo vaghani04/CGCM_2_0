@@ -142,9 +142,9 @@ class ContextGatherHelper:
             
         stats["total_files_processed"] = len(files_to_process)
         
-        with open("intermediate_outputs/files_to_process.json", "w") as f:
+        with open("intermediate_outputs/rag_context_gather_outputs/files_to_process.json", "w") as f:
             json.dump(files_to_process, f, indent=2)
-        with open("intermediate_outputs/files_to_delete.json", "w") as f:
+        with open("intermediate_outputs/rag_context_gather_outputs/files_to_delete.json", "w") as f:
             json.dump(files_to_delete, f, indent=2)
         
         # Process files and generate chunks

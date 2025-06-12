@@ -39,7 +39,7 @@ class ExtractNLContextUseCase:
             print("Analyzing codebase with LLM...")
             insights = await self._generate_insights_with_llm(codebase_path, codebase_info)
 
-            # with open("intermediate_outputs/nl_extraction_outputs/parsed_llm_response.json", "r") as f:
+            # with open("intermediate_outputs/nl_context_gather_outputs/parsed_llm_response.json", "r") as f:
             #     insights = json.load(f)
 
             print("Storing insights...")
@@ -80,7 +80,7 @@ class ExtractNLContextUseCase:
             
             parsed_response = parse_response(response)
 
-            with open("intermediate_outputs/nl_extraction_outputs/parsed_llm_response.json", "w") as f:
+            with open("intermediate_outputs/nl_context_gather_outputs/parsed_llm_response.json", "w") as f:
                 json.dump(parsed_response, f, indent=2)
 
             return parsed_response

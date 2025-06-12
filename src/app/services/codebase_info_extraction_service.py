@@ -83,7 +83,7 @@ class CodebaseInfoExtractionService:
         
         structure_lines = [base_path.name] + await traverse(base_path, 1)
     
-        with open("intermediate_outputs/nl_extraction_outputs/directory_structure.txt", "w", encoding="utf-8") as f:
+        with open("intermediate_outputs/nl_context_gather_outputs/directory_structure.txt", "w", encoding="utf-8") as f:
             f.write("\n".join(structure_lines))
         
         return "\n".join(structure_lines)
@@ -161,7 +161,7 @@ class CodebaseInfoExtractionService:
         except Exception as e:
             patterns.append(f"Error extracting patterns: {str(e)}")
 
-        with open("intermediate_outputs/nl_extraction_outputs/code_patterns.txt", "w", encoding="utf-8") as f:
+        with open("intermediate_outputs/nl_context_gather_outputs/code_patterns.txt", "w", encoding="utf-8") as f:
             f.write("\n".join(patterns))
         
         return "\n".join(patterns) if patterns else "No code patterns found"
@@ -369,7 +369,7 @@ class CodebaseInfoExtractionService:
         except Exception as e:
             doc_content.append(f"Error extracting documentation: {str(e)}")
         
-        with open("intermediate_outputs/nl_extraction_outputs/documentation_content.txt", "w", encoding="utf-8") as f:
+        with open("intermediate_outputs/nl_context_gather_outputs/documentation_content.txt", "w", encoding="utf-8") as f:
             f.write("\n".join(doc_content))
         
         return "\n".join(doc_content) if doc_content else "No documentation files found" 

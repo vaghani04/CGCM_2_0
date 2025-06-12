@@ -79,9 +79,6 @@ class UserQueryHelper:
             print(f"Generating Cypher queries for: {query}")
             cypher_queries = await self.repo_map_usecase._generate_cypher_queries(query, project_structure)
 
-            # with open("intermediate_outputs/cypher_queries.json", "r") as f:
-            #     cypher_queries = json.load(f)
-            #     cypher_queries = cypher_queries["queries"]
             # Execute queries in parallel
             print(f"Executing {len(cypher_queries)} Cypher queries")
             
@@ -89,13 +86,8 @@ class UserQueryHelper:
             with open("intermediate_outputs/repo_map_search_outputs/cypher_queries_execution_results.json", "w") as f:
                 json.dump(results, f)
 
-            
-            # with open("intermediate_outputs/cypher_queries_execution_results.json", "r") as f:
-            #     results = json.load(f)
-            
-            
             # Assemble the final context
-            print(f"Assembling context from {len(results.get('results', []))} results")
+            print(f"Assembling context from {len(results)} results")
             context = await self.context_assembly_service.assemble_context(results, query)
             
             

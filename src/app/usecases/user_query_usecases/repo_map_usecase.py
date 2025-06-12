@@ -62,7 +62,7 @@ class RepoMapUsecase:
         
         structure_lines = [base_path.name] + await traverse(base_path, 1)
     
-        with open("intermediate_outputs/project_structure.txt", "w", encoding="utf-8") as f:
+        with open("intermediate_outputs/repo_map_search_outputs/project_structure.txt", "w", encoding="utf-8") as f:
             f.write("\n".join(structure_lines))
         
         return "\n".join(structure_lines)
@@ -192,14 +192,10 @@ class RepoMapUsecase:
                 result = await task
                 # Add query description to each result item
                 for item in result:
-                    item["query_description"] = description
+                    item["description"] = description
                 all_results.extend(result)
             except Exception as e:
                 print(f"Error executing query: {e}")
         
         # Return the aggregated results with the template_used field set to "llm_generated"
-        return {
-            "found": len(all_results) > 0,
-            "results": all_results,
-            "template_used": "llm_generated"  # Set template to llm_generated
-        }
+        return all_results

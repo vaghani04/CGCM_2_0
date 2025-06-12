@@ -42,7 +42,7 @@ class NLSearchUsecase:
 
         parsed_response = parse_response(response)
 
-        with open("intermediate_outputs/nl_extraction_outputs/nl_search_llm_response.json", "w") as f:
+        with open("intermediate_outputs/nl_search_outputs/nl_search_llm_response.json", "w") as f:
             json.dump(parsed_response, f)
 
         return parsed_response
@@ -97,7 +97,7 @@ class NLSearchUsecase:
         
         structure_lines = [base_path.name] + await traverse(base_path, 1)
     
-        with open("intermediate_outputs/nl_extraction_outputs/directory_structure.txt", "w", encoding="utf-8") as f:
+        with open("intermediate_outputs/nl_search_outputs/directory_structure.txt", "w", encoding="utf-8") as f:
             f.write("\n".join(structure_lines))
         
         return "\n".join(structure_lines)

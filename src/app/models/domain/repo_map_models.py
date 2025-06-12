@@ -7,6 +7,7 @@ class LanguageType(Enum):
     PYTHON = "python"
     JAVASCRIPT = "javascript"
     TYPESCRIPT = "typescript"
+    UNKNOWN = "unknown"
 
 
 class FunctionVisibility(Enum):

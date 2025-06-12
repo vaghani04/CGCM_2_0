@@ -13,9 +13,9 @@ def get_relative_path(absolute_path: str, codebase_path: str) -> str:
         Relative path from the codebase path
         
     Example:
-        absolute_path = "/Users/maunikvaghani/Developer/pp/a_testing/src/services copy/authService.js"
-        codebase_path = "/Users/maunikvaghani/Developer/pp/a_testing"
-        result = "src/services copy/authService.js"
+        absolute_path = "/path/to/your/project/src/services/service.js"
+        codebase_path = "/path/to/your/project"
+        result = "src/services/service.js"
     """
     try:
         # Normalize paths to handle any path separator issues

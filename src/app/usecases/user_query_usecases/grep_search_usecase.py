@@ -68,7 +68,7 @@ class GrepSearchUsecase:
         
         structure_lines = [base_path.name] + await traverse(base_path, 1)
     
-        with open("intermediate_outputs/project_structure.txt", "w", encoding="utf-8") as f:
+        with open("intermediate_outputs/grep_search_outputs/project_structure.txt", "w", encoding="utf-8") as f:
             f.write("\n".join(structure_lines))
         
         return "\n".join(structure_lines)
@@ -136,7 +136,7 @@ class GrepSearchUsecase:
         parsed_response = parse_response(response)
         
         # Save the parsed response for debugging
-        with open("intermediate_outputs/grep_commands.json", "w") as f:
+        with open("intermediate_outputs/grep_search_outputs/grep_commands.json", "w") as f:
             json.dump(parsed_response, f, indent=2)
         
         # Validate the parsed response
@@ -198,7 +198,7 @@ class GrepSearchUsecase:
             all_results.append(result)
         
         # Save all results for debugging
-        with open("intermediate_outputs/grep_search_results.json", "w") as f:
+        with open("intermediate_outputs/grep_search_outputs/grep_search_results.json", "w") as f:
             json.dump(all_results, f, indent=2)
         
         return all_results
@@ -262,7 +262,7 @@ class GrepSearchUsecase:
         }
         
         # Save both structured and debug versions
-        with open("intermediate_outputs/grep_search_structured_output.json", "w") as f:
+        with open("intermediate_outputs/grep_search_outputs/grep_search_structured_output.json", "w") as f:
             json.dump(structured_output, f, indent=2)
         
         return json.dumps(structured_output, indent=2)

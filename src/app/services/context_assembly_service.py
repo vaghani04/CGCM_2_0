@@ -22,18 +22,18 @@ class ContextAssemblyService:
         Returns:
             A formatted string with the assembled context
         """
-        if not query_results.get("found", False):
-            return f"No relevant code context found for query: '{user_query}'"
+        # if not query_results.get("found", False):
+        #     return f"No relevant code context found for query: '{user_query}'"
         
         context_parts = []
         
         # Add a header
         context_parts.append(f"## Code Context for: {user_query}")
         context_parts.append("")  # Empty line
-        
+            
         # Process the results
-        results = query_results.get("results", [])
-        template_used = query_results.get("template_used", "generic")
+        results = query_results
+        template_used = "llm_generated"
         
         # For LLM-generated queries, we use dynamic formatting based on result structure
         if template_used == "llm_generated":

@@ -106,7 +106,7 @@ class RAGRetrievalUsecase:
                         )
                     }
                 )
-        with open("intermediate_outputs/pinecone_retrieval_results.json", "w") as f:
+        with open("intermediate_outputs/rag_search_outputs/pinecone_retrieval_results.json", "w") as f:
             json.dump(doc_metadata, f, indent=2)
         # return doc_metadata
 
@@ -117,7 +117,7 @@ class RAGRetrievalUsecase:
         if not documents:
             return []
         
-        with open("intermediate_outputs/documents_fetched_from_mongodb.json", "w") as f:
+        with open("intermediate_outputs/rag_search_outputs/documents_fetched_from_mongodb.json", "w") as f:
             json.dump(documents, f, indent=2)
 
         reranked_results = await self.reranker_service.voyage_rerank(
@@ -138,7 +138,7 @@ class RAGRetrievalUsecase:
                 )
 
         full_final_results = final_results
-        with open("intermediate_outputs/rag_retrieval_results.json", "w") as f:
+        with open("intermediate_outputs/rag_search_outputs/rag_retrieval_results.json", "w") as f:
             json.dump(full_final_results, f, indent=2)
         return full_final_results
 
