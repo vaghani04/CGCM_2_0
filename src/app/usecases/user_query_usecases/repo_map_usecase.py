@@ -124,7 +124,7 @@ class RepoMapUsecase:
         parsed_response = parse_response(response)
         
         # Save the parsed response for debugging
-        with open("intermediate_outputs/cypher_queries.json", "w") as f:
+        with open("intermediate_outputs/repo_map_search_outputs/cypher_queries.json", "w") as f:
             json.dump(parsed_response, f, indent=2)
         
         # Validate the parsed response

@@ -71,6 +71,9 @@ class UserQueryHelper:
             # Get project structure
             print(f"Getting directory structure for {codebase_path}")
             project_structure = await self.repo_map_usecase.get_directory_structure(codebase_path, depth=5)
+
+            with open("intermediate_outputs/repo_map_search_outputs/project_structure.txt", "w") as f:
+                f.write(project_structure)
             
             # Generate Cypher queries using LLM
             print(f"Generating Cypher queries for: {query}")
@@ -83,7 +86,7 @@ class UserQueryHelper:
             print(f"Executing {len(cypher_queries)} Cypher queries")
             
             results = await self.repo_map_usecase._execute_queries_parallel(cypher_queries)
-            with open("intermediate_outputs/cypher_queries_execution_results.json", "w") as f:
+            with open("intermediate_outputs/repo_map_search_outputs/cypher_queries_execution_results.json", "w") as f:
                 json.dump(results, f)
 
             
@@ -96,7 +99,7 @@ class UserQueryHelper:
             context = await self.context_assembly_service.assemble_context(results, query)
             
             
-            with open("intermediate_outputs/repo_map_context.txt", "w") as f:
+            with open("intermediate_outputs/repo_map_search_outputs/repo_map_context.txt", "w") as f:
                 f.write(context)
 
             return context
