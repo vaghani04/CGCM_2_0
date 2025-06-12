@@ -3,7 +3,7 @@ import hashlib
 import json
 from typing import List, Dict
 from fastapi import Depends
-from chonkie import CodeChunker
+from chonkie import CodeChunker, RecursiveChunker
 from src.app.utils.hash_calculator import calculate_hash
 
 class CodeChunkingService:
@@ -14,8 +14,13 @@ class CodeChunkingService:
             '.js': 'javascript',
             '.ts': 'typescript',
             '.jsx': 'javascript',
-            '.tsx': 'typescript'
+            '.tsx': 'typescript',
+            '.md': 'markdown',
+            '.txt': 'text'
         }
+        
+        # Define which extensions should use text chunking vs code chunking
+        self.text_extensions = {'.md', '.txt'}
         
     
     def detect_language(self, file_path: str) -> str:
@@ -31,16 +36,34 @@ class CodeChunkingService:
         ext = os.path.splitext(file_path)[1].lower()
         return self.lang_map.get(ext, 'text')
     
-    def determine_chunk_type(self, nodes: List[Dict]) -> str:
+    def is_text_file(self, file_path: str) -> bool:
         """
-        Determine the chunk type based on AST nodes
+        Check if the file should be treated as text (markdown/txt) or code
         
         Args:
-            nodes: List of AST nodes from chonkie
+            file_path: Path to the file
+            
+        Returns:
+            True if it's a text file, False if it's a code file
+        """
+        ext = os.path.splitext(file_path)[1].lower()
+        return ext in self.text_extensions
+    
+    def determine_chunk_type(self, nodes: List[Dict], language: str) -> str:
+        """
+        Determine the chunk type based on AST nodes or language
+        
+        Args:
+            nodes: List of AST nodes from chonkie (empty for text files)
+            language: The detected language
             
         Returns:
             Chunk type as string
         """
+        # For text-based files, always return "text"
+        if language in ['markdown', 'text']:
+            return "text"
+            
         if not nodes:
             return "unknown"
             
@@ -119,8 +142,19 @@ class CodeChunkingService:
             # Language is automatically detected by the chunker
             language = self.detect_language(file_path)
             
-            chunker = CodeChunker(language=language, include_nodes=True, tokenizer_or_token_counter="gpt2")
-            chunks = chunker.chunk(text = content)
+            # Choose chunker based on file type
+            if self.is_text_file(file_path):
+                print(f"📄 Using RecursiveChunker for text file: {file_path}")
+                # Use RecursiveChunker for markdown and text files
+                # Use basic recursive chunker for both .md and .txt to avoid network dependencies
+                chunker = RecursiveChunker()
+                print(f"🔧 Using basic RecursiveChunker for {file_path}")
+                chunks = chunker(content)
+                print(f"✅ RecursiveChunker generated {len(chunks)} chunks for {file_path}")
+            else:
+                # Use CodeChunker for programming files
+                chunker = CodeChunker(language=language, include_nodes=True, tokenizer_or_token_counter="gpt2")
+                chunks = chunker(content)
 
             # Process chunks into our format
             result_chunks = []
@@ -136,8 +170,11 @@ class CodeChunkingService:
                 
                 content_hash = hashlib.sha256(chunk.text.encode('utf-8')).hexdigest()
 
-                # Determine chunk type
-                chunk_type = self.determine_chunk_type(chunk.nodes if hasattr(chunk, 'nodes') else [])
+                # Determine chunk type - pass language for text files
+                chunk_type = self.determine_chunk_type(
+                    chunk.nodes if hasattr(chunk, 'nodes') else [], 
+                    language
+                )
                 
                 # Relative file path from codebase
                 relative_path = os.path.relpath(file_path, codebase_path)

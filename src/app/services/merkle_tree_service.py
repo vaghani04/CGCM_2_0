@@ -94,6 +94,8 @@ class MerkleTreeService:
             '.jsx',    # React JSX
             '.ts',     # TypeScript
             '.tsx',    # TypeScript React
+            '.md',     # Markdown
+            '.txt'     # Text files
         ]
         
         # Explicitly exclude these file types (binary/media files)

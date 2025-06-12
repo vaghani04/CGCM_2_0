@@ -20,7 +20,7 @@ class RepoMapUsecase:
         # Ensure the intermediate_outputs directory exists
         os.makedirs("intermediate_outputs", exist_ok=True)
 
-    async def get_directory_structure(self, codebase_path: str, depth: int = 2) -> str:
+    async def get_directory_structure(self, codebase_path: str, depth: int = 4) -> str:
         """
         Async version of directory structure scanner.
         Returns directory structure as a formatted string.

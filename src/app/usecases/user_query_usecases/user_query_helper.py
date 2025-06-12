@@ -60,7 +60,7 @@ class UserQueryHelper:
             
             # Get project structure
             print(f"Getting directory structure for {codebase_path}")
-            project_structure = await self.repo_map_usecase.get_directory_structure(codebase_path, depth=3)
+            project_structure = await self.repo_map_usecase.get_directory_structure(codebase_path, depth=5)
             
             # Generate Cypher queries using LLM
             print(f"Generating Cypher queries for: {query}")
