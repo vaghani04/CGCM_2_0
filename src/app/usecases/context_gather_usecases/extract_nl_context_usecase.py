@@ -1,9 +1,6 @@
 import json
-import os
 from typing import Dict, Any, Optional
-
 from fastapi import Depends
-
 from src.app.services.codebase_info_extraction_service import CodebaseInfoExtractionService
 from src.app.services.openai_service import OpenAIService
 from src.app.services.file_storage_service import FileStorageService
@@ -75,7 +72,7 @@ class ExtractNLContextUseCase:
             response = await self.openai_service.completions(
                 user_prompt=user_prompt,
                 system_prompt=GEN_NL_CONTEXT_SYSTEM_PROMPT,
-                # temperature=0.1
+                temperature=0.1
             )
             
             parsed_response = parse_response(response)
