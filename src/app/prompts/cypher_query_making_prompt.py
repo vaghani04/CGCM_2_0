@@ -84,7 +84,7 @@ Example response format:
   "queries": [
     {
       "query": "MATCH (function:Function) WHERE function.name CONTAINS 'process_data' RETURN function.name, function.docstring, function.file_path, function.line_number LIMIT 10",
-      "description": // description about the results of the query which can be helpful to the next stage.
+      "description": // description about the results of the query which can be helpful to the next stage. Don't mention that this query describes this, this query retrieves this, this query does this and all. Just simple brief decritpion about its results.
     },
     {
       "query": "MATCH (file:File) WHERE file.path CONTAINS 'utils' RETURN file.path, file.language, file.lines_of_code LIMIT 10",
@@ -106,6 +106,8 @@ Example response format:
 8. ONLY use the node types and relationship types listed above
 9. Make node labels PascalCase (e.g., :File, :Function, :Class) to match the database schema
 10. Ensure all your queries can be executed directly without parameters
+11. Always use full named in the queries like function, class, file, directory, etc.
+12. And make the queries through which dependencies can be found.
 """
 
 CYPHER_QUERY_MAKING_USER_PROMPT = """
@@ -128,13 +130,6 @@ so that if user wants to modify or refactor the function then our next agent can
 same thing is applicable for class, files as well.
 If user tells to modify or refactor the file then we need to extract its dependencies so that agent understand where in the codebase it need to change the things.
 if user is talking about the new feature implementation then you need to understand based on the directory structure related to new feature which features already implemented. then you need to provide the context about those features. like give their location that where they are implemented.
-
-
-
-For file paths, always include enough information in your results by returning properties like:
-- For functions/classes: name, file_path, line_number, docstring
-- For files: path, language, lines_of_code
-- For directories: path, name
 
 Return your response in the JSON format as specified in the system prompt.
 

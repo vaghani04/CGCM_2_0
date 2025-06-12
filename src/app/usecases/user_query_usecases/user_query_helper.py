@@ -87,14 +87,14 @@ class UserQueryHelper:
                 json.dump(results, f)
 
             # Assemble the final context
-            print(f"Assembling context from {len(results)} results")
-            context = await self.context_assembly_service.assemble_context(results, query)
+            # print(f"Assembling context from {len(results)} results")
+            # context = await self.context_assembly_service.assemble_context(results, query)
             
             
-            with open("intermediate_outputs/repo_map_search_outputs/repo_map_context.txt", "w") as f:
-                f.write(context)
+            # with open("intermediate_outputs/repo_map_search_outputs/repo_map_context.txt", "w") as f:
+            #     f.write(context)
 
-            return context
+            return results
             
         except Exception as e:
             error_message = f"Error processing query: {str(e)}"

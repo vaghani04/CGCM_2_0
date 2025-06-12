@@ -53,6 +53,10 @@ class NLSearchUsecase:
         data["nl_insights"] = nl_insights
         query_specific_nl_context = await self.query_specific_nl_search(data)
 
+        query_specific_nl_context["code_hierarchy"] = nl_insights["code_hierarchy"]
+        query_specific_nl_context["codebase_flow"] = nl_insights["codebase_flow"]
+        query_specific_nl_context["intent_of_codebase"] = nl_insights["intent_of_codebase"]
+
         return query_specific_nl_context
     
     async def get_directory_structure(self, codebase_path: str, depth: int = 5) -> str:
