@@ -14,6 +14,7 @@ from src.app.utils.hash_calculator import calculate_special_hash, calculate_hash
 from src.app.services.repo_map_service import RepositoryMapService
 from src.app.usecases.context_gather_usecases.repo_map_graphdb_usecase import RepoMapGraphDBUseCase
 from src.app.utils.path_utils import get_relative_paths
+from src.app.usecases.context_gather_usecases.extract_nl_context_usecase import ExtractNLContextUseCase
 
 class ContextGatherHelper:
     def __init__(self,
@@ -23,6 +24,7 @@ class ContextGatherHelper:
                 file_storage_service: FileStorageService = Depends(FileStorageService),
                 codebase_indexing_use_case: CodebaseIndexingUseCase = Depends(CodebaseIndexingUseCase),
                 repo_map_service: RepositoryMapService = Depends(RepositoryMapService),
+                extract_nl_context_use_case: ExtractNLContextUseCase = Depends(ExtractNLContextUseCase),
             ):
         self.path_validation_service = path_validation_service
         self.merkle_tree_service = merkle_tree_service
@@ -32,6 +34,14 @@ class ContextGatherHelper:
         self.codebase_indexing_use_case = codebase_indexing_use_case
         self.repo_map_service = repo_map_service
         self.repo_map_graphdb_usecase = RepoMapGraphDBUseCase()
+        self.extract_nl_context_use_case = extract_nl_context_use_case
+    async def extract_nl_context(self, codebase_path: str, git_branch_name: str):
+        """
+        Extract the natural language context from the codebase.
+        """
+        context = await self.extract_nl_context_use_case.extract_nl_context(codebase_path, git_branch_name)
+        return context
+        
 
     async def generate_repo_map(self, codebase_path: str):
         """
@@ -87,7 +97,7 @@ class ContextGatherHelper:
         Chunk the codebase and store the chunks in the database
         """
         # Create storage key for the merkle tree
-        storage_key = f"{git_branch_name}:{codebase_path}"
+        storage_key = f"{codebase_path}:{git_branch_name}"
         
         # Initialize statistics
         stats = {

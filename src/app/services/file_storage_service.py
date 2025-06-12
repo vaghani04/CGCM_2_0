@@ -67,7 +67,7 @@ class FileStorageService:
             if len(parts) != 2:
                 raise ValueError(f"Invalid key format: {key}")
                 
-            git_branch, workspace_path = parts
+            workspace_path, git_branch = parts
             
             # Get just the basename for the key
             workspace_basename = os.path.basename(workspace_path.rstrip('/'))
@@ -158,6 +158,82 @@ class FileStorageService:
             deserialized_data = self._deserialize_data(key_data)
             
             return deserialized_data['merkle_tree'], deserialized_data['file_hashes']
+            
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error retrieving merkle tree from file: {str(e)}"
+            )
+        
+    async def store_nl_insights(self, key: str, insights: Dict):
+        """
+        Store natural language insights in a JSON file
+        """
+        try:
+            # Extract workspace path and git branch from key
+            parts = key.split(':')
+            if len(parts) != 2:
+                raise ValueError(f"Invalid key format: {key}")
+                
+            workspace_path, git_branch = parts
+            
+            workspace_basename = os.path.basename(workspace_path.rstrip('/'))
+            storage_key = f"{workspace_basename}_{git_branch}"
+            workspace_dir = self._get_workspace_dir(workspace_path)
+            file_path = workspace_dir / "nl_insights.json"
+            
+            data = {}
+            if file_path.exists():
+                with open(file_path, 'r') as f:
+                    data = json.load(f)
+
+            data[storage_key] = insights
+
+            with open(file_path, 'w') as f:
+                json.dump(data, f, indent=2)
+                
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error storing merkle tree in file: {str(e)}"
+            )
+        
+    async def get_nl_insights(self, key: str) -> Optional[Tuple[Any, Dict]]:
+        """
+        Retrieve merkle tree and file hashes from file storage
+        
+        Args:
+            key: Storage key (git_branch:workspace_path)
+            
+        Returns:
+            Tuple of (merkle_tree, file_hashes) or None if not found
+        """
+        try:
+            # Extract workspace path and git branch from key
+            parts = key.split(':')
+            if len(parts) != 2:
+                raise ValueError(f"Invalid key format: {key}")
+                
+            workspace_path, git_branch = parts
+            workspace_basename = os.path.basename(workspace_path.rstrip('/'))
+            storage_key = f"{workspace_basename}_{git_branch}"
+
+            workspace_dir = self._get_workspace_dir(workspace_path)
+
+            file_path = workspace_dir / "nl_insights.json"
+
+            if not file_path.exists():
+                return None
+
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+
+            if storage_key not in data:
+                return None
+
+            key_data = data[storage_key]
+            
+            return key_data
             
         except Exception as e:
             raise HTTPException(

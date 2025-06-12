@@ -61,6 +61,8 @@ class Settings(BaseSettings):
     OPENAI_COMPLETION_ENDPOINT: str = "/chat/completions"
     OPENAI_MODEL: str = "gpt-4.1-mini"
 
+    # Natural Language Insights settings
+    NL_INSIGHTS_SUPPORTED_EXTENSIONS: list = [".py", ".js", ".jsx", ".ts", ".tsx", ".md", ".txt", ".rst"]
     class Config:
         env_file = ".env"
 
