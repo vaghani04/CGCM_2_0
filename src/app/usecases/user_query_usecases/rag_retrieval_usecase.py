@@ -152,6 +152,8 @@ class RAGRetrievalUsecase:
         
         try:
             retrieved_docs = await self.perform_rag(query, index_name, target_directories, current_git_branch, codebase_path_hash)
+
+            filtered_results = await self.filter_results(retrieved_docs)
             
             end_time = time.time()
             processing_time = end_time - start_time
@@ -159,7 +161,7 @@ class RAGRetrievalUsecase:
             print(f"✓ RAG retrieval completed")
             print(f"Total RAG retrieval time: {processing_time:.2f} seconds")
             
-            return retrieved_docs
+            return filtered_results
             
         except Exception as e:
             loggers["main"].error(f"Error during RAG execution: {e}")
@@ -167,6 +169,21 @@ class RAGRetrievalUsecase:
             processing_time = end_time - start_time
             loggers["main"].info(f"Processing time before error: {processing_time:.2f} seconds")
             raise e
+
+    async def filter_results(self, retrieved_docs: list[dict]):
+        filtered_results = []
+        for doc in retrieved_docs:
+            if doc.get("relevance_score") > 0.5:
+                filtered_doc = doc.copy()
+                if "metadata" in filtered_doc and isinstance(filtered_doc["metadata"], dict):
+                    metadata_copy = filtered_doc["metadata"].copy()
+                    metadata_copy.pop("score", None)  # Remove score if it exists
+                    filtered_doc["metadata"] = metadata_copy
+                filtered_results.append(filtered_doc)
+        
+        with open("intermediate_outputs/rag_search_outputs/filtered_rag_results.json", "w") as f:
+            json.dump(filtered_results, f, indent=2)
+        return filtered_results
 
     async def is_rag_required(self, query: str, codebase_path: str):
         

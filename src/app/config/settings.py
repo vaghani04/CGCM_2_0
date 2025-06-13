@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     # Indexing settings
     INDEXING_UPSERT_BATCH_SIZE: int = 80
-    INDEXING_SIMILARITY_METRIC: str = "dotproduct"
+    INDEXING_SIMILARITY_METRIC: str = "cosine"
     INDEXING_SEMAPHORE_VALUE: int = 7
 
     # Repository Map settings
