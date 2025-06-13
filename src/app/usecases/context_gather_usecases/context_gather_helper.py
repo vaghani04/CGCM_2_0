@@ -43,7 +43,7 @@ class ContextGatherHelper:
         return context
         
 
-    async def generate_repo_map(self, codebase_path: str):
+    async def generate_repo_map(self, codebase_path: str, git_branch_name: str):
         """
         Generate the repository map for the given codebase path and store it in GraphDB.
         """
@@ -53,8 +53,13 @@ class ContextGatherHelper:
                 codebase_path=codebase_path,
                 output_file="intermediate_outputs/repo_map_from_route.json"
             )
-            
-            return result
+            print("✓ Repo map generation completed")
+
+            nl_result = await self.extract_nl_context(codebase_path, git_branch_name)
+            combined_result = {}
+            combined_result["repo_map_result"] = result
+            combined_result["nl_result"] = nl_result
+            return combined_result
             
         except Exception as e:
             print(f"Error in generate_repo_map: {e}")
@@ -178,7 +183,7 @@ class ContextGatherHelper:
         )
         
         repo_map_task = asyncio.create_task(
-            self.generate_repo_map(codebase_path),
+            self.generate_repo_map(codebase_path, git_branch_name),
             name="repo_map_generation"
         )
         
@@ -206,7 +211,8 @@ class ContextGatherHelper:
             
             # Combine results from both operations
             combined_result = indexing_result.model_dump()
-            combined_result["repo_map_result"] = repo_map_result
+            combined_result["repo_map_result"] = repo_map_result["repo_map_result"]
+            combined_result["nl_result"] = repo_map_result["nl_result"]
             
             return combined_result
             
