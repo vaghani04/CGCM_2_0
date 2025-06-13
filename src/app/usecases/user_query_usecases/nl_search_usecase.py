@@ -7,7 +7,8 @@ from src.app.utils.response_parser import parse_response
 import json
 from pathlib import Path
 import asyncio
-from src.app.config import settings
+from src.app.config.settings import settings
+from src.app.utils.path_utils import get_absolute_path
 
 class NLSearchUsecase:
     def __init__(self,
@@ -30,9 +31,12 @@ class NLSearchUsecase:
         
         features = nl_insights["features"]
 
+        directory_structure = await self.get_directory_structure(data["codebase_path"], depth=5)
+
         user_prompt = QUERY_SPECIFIC_NL_SEARCH_USER_PROMPT.format(
             query=query,
-            features=features
+            features=features,
+            directory_structure=directory_structure
         )
 
         response = await self.openai_service.completions(
@@ -53,11 +57,26 @@ class NLSearchUsecase:
         data["nl_insights"] = nl_insights
         query_specific_nl_context = await self.query_specific_nl_search(data)
 
-        query_specific_nl_context["code_hierarchy"] = nl_insights["code_hierarchy"]
-        query_specific_nl_context["codebase_flow"] = nl_insights["codebase_flow"]
-        query_specific_nl_context["intent_of_codebase"] = nl_insights["intent_of_codebase"]
+        ds = get_absolute_path(relative_path=query_specific_nl_context.get("directory", data["codebase_path"]), codebase_path=data["codebase_path"])
+        print(f"ds: {ds}")
+        directory_structure = await self.get_directory_structure(codebase_path=ds, depth=5)
+        with open("intermediate_outputs/nl_search_outputs/llm_given_directory_structure.txt", "w", encoding="utf-8") as f:
+            f.write(directory_structure)
 
-        return query_specific_nl_context
+        final_response = {}
+        if query_specific_nl_context.get("relevant_features", []) != []:
+            final_response["relevant_features"] = query_specific_nl_context["relevant_features"]
+        else:
+            final_response["relevant_features"] = nl_insights.get("features", [])
+        
+        if directory_structure and len(directory_structure) < 1200:
+            final_response["code_hierarchy (in graphical way"] = directory_structure
+
+        final_response["code_hierarchy"] = nl_insights.get("code_hierarchy", "")
+        final_response["codebase_flow"] = nl_insights.get("codebase_flow", "")
+        final_response["intent_of_codebase"] = nl_insights.get("intent_of_codebase", "")
+
+        return final_response
     
     async def get_directory_structure(self, codebase_path: str, depth: int = 5) -> str:
         """

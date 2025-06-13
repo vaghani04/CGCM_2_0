@@ -12,7 +12,6 @@ class UserQueryUseCase:
 
     async def execute(self, user_query: Dict[str, Any]):
 
-        # return await self.user_query_helper.context_from_repo_map(user_query)
 
         start_time = time.time()
         
