@@ -196,6 +196,11 @@ Navigate to `http://localhost:5173` to use the web interface:
 
 ---
 
+## 📚 Approach Documentation
+
+[Approach Documentation](https://supreme-eel-fa5.notion.site/CGCM-Documentation-211ba7d69da580708f05d62b5b76b682?source=copy_link)
+
+
 <div align="right">
 <strong>Built with ❤️ by Maunik Vaghani</strong>
 </div>
