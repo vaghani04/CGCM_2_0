@@ -25,7 +25,7 @@ class PeriodicContextGatherer {
     // Create axios instance
     this.apiClient = axios.create({
       baseURL: API_BASE_URL,
-      timeout: 1200000, // 20 minutes timeout
+      timeout: 1800000, // 20 minutes timeout
       headers: {
         'Content-Type': 'application/json',
       },

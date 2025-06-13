@@ -321,7 +321,7 @@ const ChatPage = () => {
             
             {state.chatHistory.length > 0 && (
               <button 
-                className="btn btn-secondary btn-sm"
+                className={`btn btn-secondary btn-sm ${styles.clearChatButton}`}
                 onClick={clearChat}
                 title="Clear chat history"
               >

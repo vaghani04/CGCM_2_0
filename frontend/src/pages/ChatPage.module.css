@@ -287,7 +287,16 @@
   color: var(--success);
   font-size: 0.875rem;
   font-weight: 500;
-  margin-top: -0.99rem;
+  margin-top: -2rem;
+}
+
+/* Add specific styling for Clear Chat button to lift it up more */
+.clearChatButton {
+  margin-top: -2rem !important; /* Lift up the Clear Chat button even higher */
+}
+
+.headerActions .btn {
+  margin-top: -0.99rem; /* Lift up the Clear Chat button to match Auto-sync level */
 }
 
 .rotateIcon {

@@ -73,16 +73,18 @@ class UserQueryUseCase:
             final_response = {}
             
             # Always include repo_map_context and rag_context if they have data
-            final_response["rag_context"] = rag_context
-            final_response["repo_map_context"] = repo_map_context
+            if rag_context[0].get("text", "") != "No RAG required":
+                final_response["rag_context"] = rag_context
+            if repo_map_context:
+                final_response["repo_map_context"] = repo_map_context
 
             # Always include NL context
             final_response["nl_context"] = nl_context
             print(f"✓ NL context: {len(nl_context) if isinstance(nl_context, list) else 'included'}")
             
             # Check if both rag_context and repo_map_context are empty
-            rag_empty = not rag_context or (isinstance(rag_context, list) and len(rag_context) == 0)
-            repo_map_empty = not repo_map_context or (isinstance(repo_map_context, list) and len(repo_map_context) == 0)
+            rag_empty = final_response.get("rag_context", []) == [] 
+            repo_map_empty = final_response.get("repo_map_context", []) == []
             
             # Only include grep_search_context if both rag and repo_map are empty
             if rag_empty and repo_map_empty:
