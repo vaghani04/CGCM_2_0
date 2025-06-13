@@ -74,7 +74,7 @@ const LandingPage = () => {
             <h2 className={styles.sectionTitle}>System Capabilities</h2>
             <p className={styles.sectionDescription}>
               Built for analyzing repositories with 300+ files using advanced technologies 
-              like FastAPI and Node.js frameworks.
+              like FastAPI and graph databases.
             </p>
           </div>
           
@@ -142,7 +142,7 @@ const LandingPage = () => {
             </div>
             <div className={styles.techCategory}>
               <h4>Frameworks</h4>
-              <span className={styles.techList}>FastAPI • React • Node.js</span>
+              <span className={styles.techList}>FastAPI • React</span>
             </div>
           </div>
         </section>
