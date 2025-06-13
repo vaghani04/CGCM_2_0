@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any, Dict
 
 import httpx
-from fastapi import Depends, HTTPException
+from fastapi import HTTPException
 from pinecone import Pinecone
 
 from src.app.config.settings import settings

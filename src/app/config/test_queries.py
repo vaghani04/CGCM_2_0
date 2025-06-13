@@ -15,7 +15,7 @@ NL_CONTEXT_QUERIES = [
             ORDER BY f.name
             LIMIT 15
         """,
-        "parameters": {}
+        "parameters": {},
     },
     {
         "name": "classes_with_docstrings",
@@ -32,7 +32,7 @@ NL_CONTEXT_QUERIES = [
             ORDER BY c.name
             LIMIT 15
         """,
-        "parameters": {}
+        "parameters": {},
     },
     {
         "name": "most_used_functions",
@@ -49,7 +49,7 @@ NL_CONTEXT_QUERIES = [
             ORDER BY usage_count DESC
             LIMIT 15
         """,
-        "parameters": {}
+        "parameters": {},
     },
     {
         "name": "files_with_docstrings",
@@ -63,7 +63,7 @@ NL_CONTEXT_QUERIES = [
             ORDER BY f.path
             LIMIT 15
         """,
-        "parameters": {}
+        "parameters": {},
     },
     {
         "name": "business_logic_functions",
@@ -86,7 +86,7 @@ NL_CONTEXT_QUERIES = [
             ORDER BY f.name
             LIMIT 15
         """,
-        "parameters": {}
+        "parameters": {},
     },
     {
         "name": "function_signatures_by_usage",
@@ -103,7 +103,7 @@ NL_CONTEXT_QUERIES = [
             ORDER BY usage_count DESC, callee.name ASC
             LIMIT 15
         """,
-        "parameters": {}
+        "parameters": {},
     },
     {
         "name": "class_method_signatures",
@@ -121,6 +121,6 @@ NL_CONTEXT_QUERIES = [
             ORDER BY c.name, m.name
             LIMIT 15
         """,
-        "parameters": {}
-    }
+        "parameters": {},
+    },
 ]

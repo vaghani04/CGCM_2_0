@@ -165,7 +165,9 @@ class OpenAIService:
                     except json.JSONDecodeError:
                         continue
                     except Exception as e:
-                        loggers["main"].error(f"Error processing OpenAI stream event: {str(e)}")
+                        loggers["main"].error(
+                            f"Error processing OpenAI stream event: {str(e)}"
+                        )
                         continue
 
             # Log usage at the end

@@ -118,7 +118,9 @@ class EmbeddingRepository:
                 detail=f"Error storing embeddings: {str(e)}",
             )
 
-    async def delete_embeddings_by_hashes(self, content_hashes: List[str]) -> int:
+    async def delete_embeddings_by_hashes(
+        self, content_hashes: List[str]
+    ) -> int:
         """Delete embeddings by chunk hashes (optional cleanup)"""
         try:
             collection = await self._get_or_create_collection()

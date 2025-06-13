@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     MONGODB_DB_NAME: str = "cgcm_2_0"
     LLM_USAGE_COLLECTION_NAME: str = "llm_usage"
     EMBEDDINGS_COLLECTION_NAME: str = "global_embeddings_collection"
-    
+
     # Pinecone settings
     PINECONE_API_KEY: str
     PINECONE_CREATE_INDEX_URL: str = "https://api.pinecone.io/indexes"
@@ -26,7 +26,20 @@ class Settings(BaseSettings):
     # Repository Map settings
     REPO_MAP_OUTPUT_FILE: str = "final_repo_map.json"
     REPO_MAP_SUPPORTED_EXTENSIONS: list = [".py", ".js", ".jsx", ".ts", ".tsx"]
-    REPO_MAP_EXCLUDED_DIRS: list = ["node_modules", "__pycache__", ".git", ".venv", "venv", "env", "build", "dist", ".next", "target", "bin", "obj"]
+    REPO_MAP_EXCLUDED_DIRS: list = [
+        "node_modules",
+        "__pycache__",
+        ".git",
+        ".venv",
+        "venv",
+        "env",
+        "build",
+        "dist",
+        ".next",
+        "target",
+        "bin",
+        "obj",
+    ]
     REPO_MAP_MAX_FILE_SIZE_MB: int = 5
     REPO_MAP_CHUNK_SIZE: int = 1000
 
@@ -39,7 +52,7 @@ class Settings(BaseSettings):
     # Codebase indexing settings
     EMBEDDINGS_BATCH_SIZE: int = 80
     EMBEDDINGS_DIMENSION: int = 1024
-    
+
     # RAG settings
     RAG_TOP_K: int = 7
     RAG_TOP_N: int = 3
@@ -49,7 +62,7 @@ class Settings(BaseSettings):
     NEO4J_USER: str = "neo4j"
     NEO4J_PASSWORD: str = "password"
     NEO4J_DATABASE: str = "neo4j"
-    
+
     # GraphDB settings
     GRAPHDB_BATCH_SIZE: int = 100
     GRAPHDB_MAX_RETRIES: int = 3
@@ -62,7 +75,17 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = "gpt-4.1-mini"
 
     # Natural Language Insights settings
-    NL_INSIGHTS_SUPPORTED_EXTENSIONS: list = [".py", ".js", ".jsx", ".ts", ".tsx", ".md", ".txt", ".rst"]
+    NL_INSIGHTS_SUPPORTED_EXTENSIONS: list = [
+        ".py",
+        ".js",
+        ".jsx",
+        ".ts",
+        ".tsx",
+        ".md",
+        ".txt",
+        ".rst",
+    ]
+
     class Config:
         env_file = ".env"
 

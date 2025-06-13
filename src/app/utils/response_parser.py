@@ -1,6 +1,7 @@
 import json
 import re
 from typing import Any
+
 from src.app.utils.logging_util import loggers
 
 
@@ -44,7 +45,9 @@ def parse_response(response) -> Any:
                     response_data = json.loads(cleaned_json)
                     return response_data
                 except Exception as e3:
-                    loggers["main"].error("All JSON parsing attempts failed:", e3)
+                    loggers["main"].error(
+                        "All JSON parsing attempts failed:", e3
+                    )
                     # Return a partial parsed response with available fields
                     return extract_partial_json(json_str)
     else:

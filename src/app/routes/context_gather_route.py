@@ -6,7 +6,9 @@ from fastapi.responses import JSONResponse
 from src.app.controllers.context_gather_controller import (
     ContextGatherController,
 )
-from src.app.models.schemas.context_gather_query_schema import CodebaseContextRequest
+from src.app.models.schemas.context_gather_query_schema import (
+    CodebaseContextRequest,
+)
 from src.app.utils.error_handler import handle_exceptions
 
 router = APIRouter()
@@ -23,7 +25,9 @@ async def context_gather_route(
     start_time = time.time()
     print(f"API request started at: {start_time}")
 
-    response_data = await context_gather_controller.context_gather(codebase_context.codebase_path)
+    response_data = await context_gather_controller.context_gather(
+        codebase_context.codebase_path
+    )
 
     status_message = "Context Gathered Successfully!"
     end_time = time.time()

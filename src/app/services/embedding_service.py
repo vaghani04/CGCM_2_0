@@ -1,8 +1,11 @@
-import httpx
 import time
-from fastapi import Depends, HTTPException, status
+
+import httpx
+from fastapi import HTTPException, status
+
 from src.app.config.settings import settings
 from src.app.utils.logging_util import loggers
+
 
 class EmbeddingService:
     def __init__(self):
@@ -41,11 +44,13 @@ class EmbeddingService:
 
         try:
             start_time = time.time()
-            
+
             # Calculate approximate input tokens (rough estimate)
             total_input_chars = sum(len(str(item)) for item in inputs)
-            approx_input_tokens = total_input_chars // 4  # Very rough estimation
-            
+            approx_input_tokens = (
+                total_input_chars // 4
+            )  # Very rough estimation
+
             async with httpx.AsyncClient(
                 verify=False, timeout=self.timeout
             ) as client:
@@ -55,15 +60,17 @@ class EmbeddingService:
                 embedding_list = [
                     item["embedding"] for item in response_json["data"]
                 ]
-                
+
                 end_time = time.time()
                 duration = end_time - start_time
-                
+
                 # Get usage information if available
                 usage_info = response_json.get("usage", {})
-                prompt_tokens = usage_info.get("prompt_tokens", approx_input_tokens)
+                prompt_tokens = usage_info.get(
+                    "prompt_tokens", approx_input_tokens
+                )
                 total_tokens = usage_info.get("total_tokens", None)
-                
+
                 # Comprehensive usage log
                 loggers["voyageai"].info(
                     f"VOYAGEAI_API_USAGE | "
@@ -74,7 +81,7 @@ class EmbeddingService:
                     f"DURATION_SEC: {duration:.2f} | "
                     f"STATUS: {response.status_code}"
                 )
-                
+
                 return embedding_list
 
         except httpx.HTTPStatusError as e:

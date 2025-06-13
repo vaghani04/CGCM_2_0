@@ -1,41 +1,47 @@
-from typing import Dict, List, Any, Optional
 import json
+from typing import Any, Dict, List, Optional
 
-from src.app.models.domain.graphdb_models import GraphQuery, GraphQueryResult
-from src.app.services.neo4j_service import Neo4jService
 from fastapi import Depends
+
+from src.app.models.domain.graphdb_models import GraphQuery
+from src.app.services.neo4j_service import Neo4jService
 from src.app.utils.logging_util import loggers
+
 
 class GraphDBQueryService:
     """Service to execute Cypher queries against the Neo4j database."""
-    
+
     def __init__(self, neo4j_service: Neo4jService = Depends(Neo4jService)):
         self.neo4j_service = neo4j_service
-    
-    async def execute_cypher_query(self, cypher_query: str, parameters: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+
+    async def execute_cypher_query(
+        self, cypher_query: str, parameters: Dict[str, Any] = None
+    ) -> List[Dict[str, Any]]:
         """
         Execute a Cypher query against the Neo4j database.
-        
+
         Args:
             cypher_query: The Cypher query string
             parameters: Dictionary of query parameters (optional)
-            
+
         Returns:
             List of records returned by the query
         """
         if parameters is None:
             parameters = {}
-        
+
         query = GraphQuery(cypher_query=cypher_query, parameters=parameters)
-        
+
         try:
             result = await self.neo4j_service.execute_query(query)
             return result.records
         except Exception as e:
             loggers["main"].error(f"Error executing Cypher query: {e}")
             return []
-    
-    async def get_function_info(self, function_name: str, limit: int = 10) -> List[Dict[str, Any]]:
+
+    async def get_function_info(
+        self, function_name: str, limit: int = 10
+    ) -> List[Dict[str, Any]]:
         """Get information about functions matching the name."""
         cypher_query = """
             MATCH (f:Function)
@@ -50,10 +56,12 @@ class GraphDBQueryService:
             LIMIT $limit
         """
         parameters = {"function_name": function_name, "limit": limit}
-        
+
         return await self.execute_cypher_query(cypher_query, parameters)
-    
-    async def get_function_usage(self, function_name: str, limit: int = 10) -> List[Dict[str, Any]]:
+
+    async def get_function_usage(
+        self, function_name: str, limit: int = 10
+    ) -> List[Dict[str, Any]]:
         """Get information about where a function is used/called."""
         cypher_query = """
             MATCH (caller:Function)-[:CALLS]->(callee:Function)
@@ -66,10 +74,12 @@ class GraphDBQueryService:
             LIMIT $limit
         """
         parameters = {"function_name": function_name, "limit": limit}
-        
+
         return await self.execute_cypher_query(cypher_query, parameters)
-    
-    async def get_class_info(self, class_name: str, limit: int = 10) -> List[Dict[str, Any]]:
+
+    async def get_class_info(
+        self, class_name: str, limit: int = 10
+    ) -> List[Dict[str, Any]]:
         """Get information about classes matching the name."""
         cypher_query = """
             MATCH (c:Class)
@@ -84,10 +94,12 @@ class GraphDBQueryService:
             LIMIT $limit
         """
         parameters = {"class_name": class_name, "limit": limit}
-        
+
         return await self.execute_cypher_query(cypher_query, parameters)
-    
-    async def get_file_dependencies(self, file_path: str) -> List[Dict[str, Any]]:
+
+    async def get_file_dependencies(
+        self, file_path: str
+    ) -> List[Dict[str, Any]]:
         """Get dependencies of a file."""
         cypher_query = """
             MATCH (f:File {path: $file_path})-[:IMPORTS]->(dep:File)
@@ -95,19 +107,20 @@ class GraphDBQueryService:
                    collect(dep.path) as dependencies
         """
         parameters = {"file_path": file_path}
-        
+
         return await self.execute_cypher_query(cypher_query, parameters)
-    
-    async def search_code_entities(self, keyword: str, entity_type: Optional[str] = None, 
-                                  limit: int = 10) -> List[Dict[str, Any]]:
+
+    async def search_code_entities(
+        self, keyword: str, entity_type: Optional[str] = None, limit: int = 10
+    ) -> List[Dict[str, Any]]:
         """
         Search for code entities matching the keyword.
-        
+
         Args:
             keyword: The search keyword
             entity_type: Optional entity type to filter by (Function, Class, File)
             limit: Maximum number of results to return
-            
+
         Returns:
             List of matching entities
         """
@@ -174,31 +187,35 @@ class GraphDBQueryService:
                        n.docstring as docstring
                 LIMIT $limit
             """
-        
+
         parameters = {"keyword": keyword, "limit": limit}
-        
+
         return await self.execute_cypher_query(cypher_query, parameters)
-    
-    async def process_structured_result(self, records: List[Dict[str, Any]]) -> Dict[str, Any]:
+
+    async def process_structured_result(
+        self, records: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """
         Process the query results into a structured format.
-        
+
         Args:
             records: List of records returned by the query
-            
+
         Returns:
             Structured dictionary with the processed results
         """
         if not records:
             return {"results": [], "count": 0, "found": False}
-        
+
         # Process any special data formats
         processed_records = []
         for record in records:
             processed_record = {}
             for key, value in record.items():
                 # Handle JSON strings that might be stored in the database
-                if isinstance(value, str) and (value.startswith('[') or value.startswith('{')):
+                if isinstance(value, str) and (
+                    value.startswith("[") or value.startswith("{")
+                ):
                     try:
                         processed_record[key] = json.loads(value)
                     except json.JSONDecodeError:
@@ -206,9 +223,9 @@ class GraphDBQueryService:
                 else:
                     processed_record[key] = value
             processed_records.append(processed_record)
-        
+
         return {
             "results": processed_records,
             "count": len(processed_records),
-            "found": len(processed_records) > 0
-        } 
+            "found": len(processed_records) > 0,
+        }

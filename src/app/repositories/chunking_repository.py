@@ -61,7 +61,9 @@ class ChunkingRepository:
     async def get_all_chunks(self, codebase_path_hash: str) -> List[Chunk]:
         """Get all chunks from codebase collection"""
         try:
-            collection = await self._get_or_create_collection(codebase_path_hash)
+            collection = await self._get_or_create_collection(
+                codebase_path_hash
+            )
 
             cursor = collection.find({})
             chunks = []
@@ -85,10 +87,14 @@ class ChunkingRepository:
                 status_code=500, detail=f"Error retrieving chunks: {str(e)}"
             )
 
-    async def get_existing_chunk_hashes(self, codebase_path_hash: str) -> Set[str]:
+    async def get_existing_chunk_hashes(
+        self, codebase_path_hash: str
+    ) -> Set[str]:
         """Get all existing chunk hashes for efficient comparison"""
         try:
-            collection = await self._get_or_create_collection(codebase_path_hash)
+            collection = await self._get_or_create_collection(
+                codebase_path_hash
+            )
 
             # Only fetch chunk_hash field for efficiency
             cursor = collection.find({}, {"chunk_hash": 1, "_id": 0})
@@ -119,7 +125,9 @@ class ChunkingRepository:
             if not chunks:
                 return {"inserted": 0, "updated": 0}
 
-            collection = await self._get_or_create_collection(codebase_path_hash)
+            collection = await self._get_or_create_collection(
+                codebase_path_hash
+            )
 
             # Prepare bulk operations
             from pymongo import UpdateOne
@@ -167,7 +175,7 @@ class ChunkingRepository:
             raise HTTPException(
                 status_code=500, detail=f"Error upserting chunks: {str(e)}"
             )
-        
+
     async def delete_codebase_chunks(self, codebase_path_hash: str) -> int:
         """Delete all chunks for a codebase (cleanup operation)"""
         try:
@@ -197,7 +205,9 @@ class ChunkingRepository:
     ) -> int:
         """Delete chunks by their hashes (across all branches)"""
         try:
-            collection = await self._get_or_create_collection(codebase_path_hash)
+            collection = await self._get_or_create_collection(
+                codebase_path_hash
+            )
 
             result = await collection.delete_many(
                 {"chunk_hash": {"$in": chunk_hashes}}
@@ -223,7 +233,9 @@ class ChunkingRepository:
     ) -> int:
         """Delete chunks by their hashes AND git branch (branch-specific deletion)"""
         try:
-            collection = await self._get_or_create_collection(codebase_path_hash)
+            collection = await self._get_or_create_collection(
+                codebase_path_hash
+            )
 
             result = await collection.delete_many(
                 {"chunk_hash": {"$in": chunk_hashes}, "git_branch": git_branch}
@@ -249,7 +261,9 @@ class ChunkingRepository:
     ) -> List[Chunk]:
         """Get chunks by their file paths AND git branch"""
         try:
-            collection = await self._get_or_create_collection(codebase_path_hash)
+            collection = await self._get_or_create_collection(
+                codebase_path_hash
+            )
 
             cursor = collection.find(
                 {
@@ -284,7 +298,9 @@ class ChunkingRepository:
     ) -> Set[str]:
         """Get all chunk hashes for a specific path and branch"""
         try:
-            collection = await self._get_or_create_collection(codebase_path_hash)
+            collection = await self._get_or_create_collection(
+                codebase_path_hash
+            )
 
             cursor = collection.find(
                 {
@@ -317,7 +333,9 @@ class ChunkingRepository:
     ) -> Dict[str, Dict[str, Set[str]]]:
         """Get all chunks grouped by file_path and git_branch, returning chunk_hashes"""
         try:
-            collection = await self._get_or_create_collection(codebase_path_hash)
+            collection = await self._get_or_create_collection(
+                codebase_path_hash
+            )
 
             cursor = collection.find(
                 {},
@@ -356,16 +374,28 @@ class ChunkingRepository:
                 detail=f"Error retrieving grouped chunks: {str(e)}",
             )
 
-    async def get_chunk_content_by_fp_sl_git_branch(self, file_path: str, start_line: int, git_branch: str, codebase_path_hash: str) -> Chunk:
+    async def get_chunk_content_by_fp_sl_git_branch(
+        self,
+        file_path: str,
+        start_line: int,
+        git_branch: str,
+        codebase_path_hash: str,
+    ) -> Chunk:
         """Get a chunk by its file path, start line, and git branch"""
         try:
-            collection = await self._get_or_create_collection(codebase_path_hash)
+            collection = await self._get_or_create_collection(
+                codebase_path_hash
+            )
 
             chunk = await collection.find_one(
-                {"file_path": file_path, "start_line": start_line, "git_branch": git_branch}
+                {
+                    "file_path": file_path,
+                    "start_line": start_line,
+                    "git_branch": git_branch,
+                }
             )
             return chunk["content"]
-        
+
         except Exception as e:
             loggers["main"].error(
                 f"Error retrieving chunk by file path, start line, and git branch for codebase {codebase_path_hash}: {str(e)}"

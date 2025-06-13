@@ -1,5 +1,5 @@
 import httpx
-from fastapi import Depends, HTTPException
+from fastapi import HTTPException
 
 from src.app.config.settings import settings
 from src.app.utils.logging_util import loggers

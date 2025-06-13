@@ -1,9 +1,10 @@
 import asyncio
-import json
 import time
 from datetime import datetime
 from typing import Dict, List, Tuple
+
 from fastapi import Depends, HTTPException, status
+
 from src.app.config.settings import settings
 from src.app.models.domain.chunk import Chunk
 from src.app.models.schemas.chunk_indexing_schema import ChunkData
@@ -11,8 +12,8 @@ from src.app.repositories.chunking_repository import ChunkingRepository
 from src.app.repositories.embedding_repository import EmbeddingRepository
 from src.app.services.embedding_service import EmbeddingService
 from src.app.services.pinecone_service import PineconeService
-from src.app.utils.logging_util import loggers
 from src.app.utils.hash_calculator import calculate_special_hash
+from src.app.utils.logging_util import loggers
 
 
 class CodebaseIndexingService:
@@ -137,7 +138,9 @@ class CodebaseIndexingService:
 
                 embeddings = (
                     await self.embedding_service.voyageai_dense_embeddings(
-                        self.embeddings_model_name, self.embeddings_dimension, contents
+                        self.embeddings_model_name,
+                        self.embeddings_dimension,
+                        contents,
                     )
                 )
                 return embeddings
@@ -236,7 +239,9 @@ class CodebaseIndexingService:
                 detail=f"Error storing chunks in MongoDB: {str(e)}",
             )
 
-    async def _get_or_create_pinecone_index(self, codebase_path_hash: str) -> str:
+    async def _get_or_create_pinecone_index(
+        self, codebase_path_hash: str
+    ) -> str:
         """Get or create Pinecone index for codebase"""
         try:
             index_name = codebase_path_hash
@@ -369,8 +374,10 @@ class CodebaseIndexingService:
             )
 
     async def handle_chunk_level_deletion(
-        self, codebase_path_hash: str, incoming_chunks: List[ChunkData], 
-        codebase_path_name: str
+        self,
+        codebase_path_hash: str,
+        incoming_chunks: List[ChunkData],
+        codebase_path_name: str,
     ) -> Tuple[int, int]:
         """Handle deletion of individual chunks that are no longer present"""
         try:
@@ -439,7 +446,10 @@ class CodebaseIndexingService:
                         # Delete from Pinecone (branch-specific namespace)
                         pinecone_deleted = (
                             await self._delete_chunks_from_pinecone(
-                                codebase_path_hash, hashes_to_delete_list, branch, codebase_path_name
+                                codebase_path_hash,
+                                hashes_to_delete_list,
+                                branch,
+                                codebase_path_name,
                             )
                         )
                         pinecone_deleted_count += pinecone_deleted
@@ -487,9 +497,7 @@ class CodebaseIndexingService:
 
             # Step 1: Find chunks with matching file paths & git branch
             chunks_to_delete = await self.chunking_repository.get_chunks_by_file_paths_and_branch(
-                codebase_path_hash,
-                delete_file_paths,
-                current_git_branch
+                codebase_path_hash, delete_file_paths, current_git_branch
             )
 
             # with open("intermediate_outputs/chunks_to_delete.json", "w") as f:
@@ -513,7 +521,9 @@ class CodebaseIndexingService:
             mongodb_deleted_count = 0
             if chunk_hashes_to_delete:
                 mongodb_deleted_count = await self.chunking_repository.delete_chunks_by_hashes_and_branch(
-                    codebase_path_hash, chunk_hashes_to_delete, current_git_branch
+                    codebase_path_hash,
+                    chunk_hashes_to_delete,
+                    current_git_branch,
                 )
 
             # Step 3: Delete from Pinecone based on branch-specific namespace
@@ -524,7 +534,7 @@ class CodebaseIndexingService:
                         codebase_path_hash,
                         chunk_hashes_to_delete,
                         current_git_branch,
-                        codebase_path_name
+                        codebase_path_name,
                     )
                 )
 
@@ -541,15 +551,21 @@ class CodebaseIndexingService:
             )
 
     async def _delete_chunks_from_pinecone(
-        self, codebase_path_hash: str, chunk_hashes: List[str], git_branch: str, codebase_path_name: str
+        self,
+        codebase_path_hash: str,
+        chunk_hashes: List[str],
+        git_branch: str,
+        codebase_path_name: str,
     ) -> int:
         """Delete specific chunks from Pinecone by hash"""
         try:
             if not chunk_hashes:
                 return 0
 
-            codebase_dir_path = codebase_path_name.split('/')[-1]
-            codebase_path_hash_special_hash = calculate_special_hash(codebase_path_name)
+            codebase_dir_path = codebase_path_name.split("/")[-1]
+            codebase_path_hash_special_hash = calculate_special_hash(
+                codebase_path_name
+            )
             pinecone_index_name = f"{codebase_dir_path.lower().replace('_', '-')}-{codebase_path_hash_special_hash}"
             index_host = await self._get_or_create_pinecone_index(
                 pinecone_index_name

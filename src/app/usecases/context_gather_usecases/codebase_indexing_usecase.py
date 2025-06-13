@@ -9,9 +9,9 @@ from src.app.models.schemas.chunk_indexing_schema import (
     ChunkProcessingStats,
     CodebaseIndexingResponse,
 )
-from src.app.utils.logging_util import loggers
 from src.app.services.codebase_indexing_service import CodebaseIndexingService
 from src.app.utils.hash_calculator import calculate_special_hash
+from src.app.utils.logging_util import loggers
 
 
 class CodebaseIndexingUseCase:
@@ -35,14 +35,10 @@ class CodebaseIndexingUseCase:
             # Parse request data
             codebase_path_hash = data.get("codebase_path_hash")
             chunks_data = data.get("chunks", [])
-            deleted_file_paths = data.get(
-                "deleted_file_paths", []
-            )
-            current_git_branch = data.get(
-                "current_git_branch", "default"
-            )
+            deleted_file_paths = data.get("deleted_file_paths", [])
+            current_git_branch = data.get("current_git_branch", "default")
             codebase_path_name = data.get("codebase_path_name")
-            codebase_dir_path = codebase_path_name.split('/')[-1]
+            codebase_dir_path = codebase_path_name.split("/")[-1]
 
             if not codebase_path_hash:
                 raise HTTPException(
@@ -83,9 +79,7 @@ class CodebaseIndexingUseCase:
             # Step-3: chunk level deletion
             deleted_chunks_count = 0
             pinecone_deleted_chunks_count = 0
-            if (
-                chunk_objects
-            ):
+            if chunk_objects:
                 deleted_chunks_count, pinecone_deleted_chunks_count = (
                     await self.codebase_indexing_service.handle_chunk_level_deletion(
                         codebase_path_hash, chunk_objects, codebase_path_name
@@ -117,7 +111,9 @@ class CodebaseIndexingUseCase:
 
             pinecone_result = {"upserted_count": 0, "batches_processed": 0}
 
-            codebase_path_hash_special_hash = calculate_special_hash(codebase_path_name)
+            codebase_path_hash_special_hash = calculate_special_hash(
+                codebase_path_name
+            )
             pinecone_index_name = f"{codebase_dir_path.lower().replace('_', '-')}-{codebase_path_hash_special_hash}"
             if all_chunks_for_pinecone:
                 pinecone_result = await self.codebase_indexing_service.upsert_chunks_to_pinecone(

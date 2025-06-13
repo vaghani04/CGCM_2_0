@@ -1,8 +1,8 @@
 from typing import Any, Dict, Tuple
 
 import httpx
-from fastapi import Depends
 from fastapi.exceptions import HTTPException
+
 
 class ApiService:
     def __init__(self) -> None:
@@ -167,7 +167,7 @@ class ApiService:
                 status_code=500,
                 detail=f"Streaming API request failed with error: {str(exc)} \n , {exc.response.text} error from api_service in post_stream()",
             )
-        except httpx.RequestError as exc:   
+        except httpx.RequestError as exc:
             raise HTTPException(
                 status_code=500,
                 detail=f"Streaming API request failed with error: {str(exc)} \n error from api_service in post_stream()",

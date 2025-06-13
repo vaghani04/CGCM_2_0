@@ -1,11 +1,11 @@
-from typing import List
-
 from pydantic import BaseModel, Field
 
 
 class ChunkData(BaseModel):
     chunk_hash: str = Field(..., description="Unique hash of the chunk")
-    content_hash: str = Field(..., description="Unique hash of the chunk content")
+    content_hash: str = Field(
+        ..., description="Unique hash of the chunk content"
+    )
     content: str = Field(..., description="The actual content of the chunk")
     file_path: str = Field(..., description="file path")
     start_line: int = Field(..., description="Starting line number")
