@@ -127,15 +127,15 @@ class CodebaseIndexingService:
         """Process a batch of content for embeddings"""
         async with self.semaphore:
             try:
-                print("reached here to create dummy embeddings")
-                import random
-                embeddings = []
-                for content in contents:
-                    # Generate random embedding vector with specified dimension
-                    dummy_embedding = [random.random() for _ in range(self.embeddings_dimension)]
-                    embeddings.append(dummy_embedding)
-                
-                return embeddings
+                # print("reached here to create dummy embeddings")
+                # import random
+                # embeddings = []
+                # for content in contents:
+                #     # Generate random embedding vector with specified dimension
+                #     dummy_embedding = [random.random() for _ in range(self.embeddings_dimension)]
+                #     embeddings.append(dummy_embedding)
+                # return embeddings
+
                 embeddings = (
                     await self.embedding_service.voyageai_dense_embeddings(
                         self.embeddings_model_name, self.embeddings_dimension, contents
@@ -160,17 +160,14 @@ class CodebaseIndexingService:
                 f"Generating embeddings for {len(new_chunks)} new chunks"
             )
 
-            # Extract content for embedding generation
             contents = [chunk.content for chunk in new_chunks]
 
-            # Process in batches to respect API limits
             all_embeddings = []
             content_batches = [
                 contents[i : i + self.embeddings_batch_size]
                 for i in range(0, len(contents), self.embeddings_batch_size)
             ]
 
-            # Process batches concurrently
             tasks = [
                 self._process_embedding_chunk(batch)
                 for batch in content_batches
@@ -178,11 +175,9 @@ class CodebaseIndexingService:
 
             batch_results = await asyncio.gather(*tasks)
 
-            # Flatten results
             for batch_embeddings in batch_results:
                 all_embeddings.extend(batch_embeddings)
 
-            # Create Chunk objects with embeddings
             chunks_with_embeddings = []
             for i, chunk_data in enumerate(new_chunks):
                 chunk = Chunk(
@@ -291,10 +286,8 @@ class CodebaseIndexingService:
             if not batch:
                 return {"upserted_count": 0}
 
-            # Convert chunks to embeddings list
             embeddings = [chunk.embedding for chunk in batch]
 
-            # Convert chunks to format expected by pinecone service
             chunk_dicts = []
             for chunk in batch:
                 chunk_dict = chunk.to_dict()
@@ -332,15 +325,12 @@ class CodebaseIndexingService:
                 f"Upserting {len(all_chunks)} chunks to Pinecone for codebase {codebase_path_hash}"
             )
 
-            # Get or create index
             index_host = await self._get_or_create_pinecone_index(
                 codebase_path_hash
             )
 
-            # Use git_branch as namespace, fallback to "default"
             namespace = git_branch if git_branch else "default"
 
-            # Process in batches
             batches = [
                 all_chunks[i : i + self.upsert_batch_size]
                 for i in range(0, len(all_chunks), self.upsert_batch_size)
@@ -356,7 +346,6 @@ class CodebaseIndexingService:
                     index_host, batch, namespace
                 )
 
-                # Handle different response formats
                 if "upsertedCount" in result:
                     total_upserted += result["upsertedCount"]
                 elif "upserted_count" in result:

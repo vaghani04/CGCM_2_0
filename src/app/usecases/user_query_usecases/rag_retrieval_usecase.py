@@ -56,20 +56,19 @@ class RAGRetrievalUsecase:
 
     async def perform_rag(self, query: str, index_name: str, target_directories: list[str], current_git_branch: str, codebase_path_hash: str):
 
-        # Step 1: Generate embeddings for the query
-        # query_embedding = (
-        #     await self.embedding_service.voyageai_dense_embeddings(
-        #         self.embedding_model,
-        #         dimension=self.dimension,
-        #         inputs=[query],
-        #         input_type=self.query_input_type,
-        #     )
-        # )
-        # query_embedding = query_embedding[0]
-        query_embedding = [random.random() for _ in range(self.dimension)]
+        # Step-1: Query embeddings generation
+        query_embedding = (
+            await self.embedding_service.voyageai_dense_embeddings(
+                self.embedding_model,
+                dimension=self.dimension,
+                inputs=[query],
+                input_type=self.query_input_type,
+            )
+        )
+        query_embedding = query_embedding[0]
+        # query_embedding = [random.random() for _ in range(self.dimension)]
 
-        # Step 2: Query Pinecone with the embeddings
-        # Create metadata filter based on target directories if provided
+        # Step-2: pinecone query
         filter_conditions = {}
         if target_directories and len(target_directories) > 0:
             filter_conditions = {"directory": {"$in": target_directories}}
@@ -84,17 +83,13 @@ class RAGRetrievalUsecase:
             namespace=current_git_branch
         )
 
-        # return vector_search_results
-
         if not vector_search_results or not vector_search_results.get(
             "matches"
         ):
             return []
 
-        # Step 3: Extract text passages and metadata from results
-        # documents = []
+        # Step-3: extract metadata
         doc_metadata = []
-        # file_paths = []
         for match in vector_search_results.get("matches", []):
             if match.get("metadata"):
                 doc_metadata.append(
@@ -113,10 +108,8 @@ class RAGRetrievalUsecase:
                 )
         with open("intermediate_outputs/rag_search_outputs/pinecone_retrieval_results.json", "w") as f:
             json.dump(doc_metadata, f, indent=2)
-        # return doc_metadata
 
-    
-        # Step 4: fetch the code content from mongodb based on the metadata (file_path, start_line, git_branch)
+        # Step-4: Fetch from mongodb actual data
         documents = await self.fetch_docs_from_mongodb(doc_metadata, current_git_branch, codebase_path_hash)
 
         if not documents:
@@ -129,7 +122,7 @@ class RAGRetrievalUsecase:
             self.reranker_model, query, documents, self.top_n
         )
 
-        # Step 5: Combine reranked results with metadata
+        # Step-5: reranker
         final_results = []
         for result in reranked_results.get("data", []):
             index = result.get("index")
@@ -142,6 +135,7 @@ class RAGRetrievalUsecase:
                     }
                 )
 
+        # Step-6: save results
         full_final_results = final_results
         with open("intermediate_outputs/rag_search_outputs/rag_retrieval_results.json", "w") as f:
             json.dump(full_final_results, f, indent=2)
@@ -154,12 +148,7 @@ class RAGRetrievalUsecase:
         if not rag_required:
             return [{"text": "No RAG required", "relevance_score": 0, "metadata": {"reason": "Query does not contain specific technical content suitable for RAG retrieval"}}]
         
-        #TODO # here we will add the logic if the user query is too long chunk it with same technique and do the parallel rag retrieval
-
         start_time = time.time()
-        
-        # Execute single RAG query since RAG is required
-        print("Starting RAG retrieval...")
         
         try:
             retrieved_docs = await self.perform_rag(query, index_name, target_directories, current_git_branch, codebase_path_hash)
@@ -169,7 +158,6 @@ class RAGRetrievalUsecase:
             
             print(f"✓ RAG retrieval completed")
             print(f"Total RAG retrieval time: {processing_time:.2f} seconds")
-            print(f"Retrieved {len(retrieved_docs)} documents")
             
             return retrieved_docs
             
@@ -177,7 +165,7 @@ class RAGRetrievalUsecase:
             print(f"Error during RAG execution: {e}")
             end_time = time.time()
             processing_time = end_time - start_time
-            print(f"⏱️  Processing time before error: {processing_time:.2f} seconds")
+            print(f"Processing time before error: {processing_time:.2f} seconds")
             raise e
 
     async def is_rag_required(self, query: str, codebase_path: str):

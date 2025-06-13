@@ -138,28 +138,18 @@ class CodeChunkingService:
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
-                
-            # Language is automatically detected by the chunker
+
             language = self.detect_language(file_path)
-            
-            # Choose chunker based on file type
+
             if self.is_text_file(file_path):
-                print(f"📄 Using RecursiveChunker for text file: {file_path}")
-                # Use RecursiveChunker for markdown and text files
-                # Use basic recursive chunker for both .md and .txt to avoid network dependencies
                 chunker = RecursiveChunker()
-                print(f"🔧 Using basic RecursiveChunker for {file_path}")
                 chunks = chunker(content)
-                print(f"✅ RecursiveChunker generated {len(chunks)} chunks for {file_path}")
             else:
-                # Use CodeChunker for programming files
                 chunker = CodeChunker(language=language, include_nodes=True, tokenizer_or_token_counter="gpt2")
                 chunks = chunker(content)
 
-            # Process chunks into our format
             result_chunks = []
             for chunk in chunks:
-                # Calculate line numbers
                 start_line, end_line = self.calculate_line_numbers(
                     content, chunk.start_index, chunk.end_index
                 )

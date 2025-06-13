@@ -8,3 +8,4 @@ pydantic-settings
 motor
 pinecone
 neo4j
+chonkie[all]

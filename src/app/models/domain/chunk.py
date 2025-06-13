@@ -16,7 +16,6 @@ class Chunk:
         git_branch: str,
         token_count: int,
         embedding: Optional[List[float]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
     ):
@@ -31,7 +30,6 @@ class Chunk:
         self.git_branch = git_branch
         self.token_count = token_count
         self.embedding = embedding
-        self.metadata = metadata or {}
         self.created_at = created_at or datetime.now()
         self.updated_at = updated_at or datetime.now()
 
@@ -48,7 +46,6 @@ class Chunk:
             "git_branch": self.git_branch,
             "token_count": self.token_count,
             "embedding": self.embedding,
-            "metadata": self.metadata,
             "created_at": (
                 self.created_at.isoformat() if self.created_at else None
             ),
@@ -85,7 +82,6 @@ class Chunk:
             git_branch=data["git_branch"],
             token_count=data["token_count"],
             embedding=data.get("embedding"),
-            metadata=data.get("metadata", {}),
             created_at=created_at,
             updated_at=updated_at,
         )

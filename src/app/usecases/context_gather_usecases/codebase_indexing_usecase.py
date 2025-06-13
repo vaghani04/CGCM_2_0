@@ -54,7 +54,7 @@ class CodebaseIndexingUseCase:
                 f"Processing {len(chunks_data)} chunks and {len(deleted_file_paths)} deleted files for codebase {codebase_path_hash} on branch {current_git_branch}"
             )
 
-            # Convert to ChunkData objects
+            # Step-1: chunk level insertion
             chunk_objects = []
             if chunks_data:
                 for chunk_dict in chunks_data:
@@ -67,7 +67,7 @@ class CodebaseIndexingUseCase:
                             detail=f"Invalid chunk data: {str(e)}",
                         )
 
-            # Step 2: Handle deleted files first with branch-specific deletion
+            # Step-2: file level deletion
             deleted_files_count = 0
             pinecone_deleted_files_count = 0
             if deleted_file_paths:
@@ -80,19 +80,19 @@ class CodebaseIndexingUseCase:
                     )
                 )
 
-            # Step 3: Handle chunk-level deletion (for individual chunks that are no longer present)
+            # Step-3: chunk level deletion
             deleted_chunks_count = 0
             pinecone_deleted_chunks_count = 0
             if (
                 chunk_objects
-            ):  # Only check for chunk deletion if we have incoming chunks
+            ):
                 deleted_chunks_count, pinecone_deleted_chunks_count = (
                     await self.codebase_indexing_service.handle_chunk_level_deletion(
                         codebase_path_hash, chunk_objects, codebase_path_name
                     )
                 )
 
-            # Step 4: Identify chunks and prepare with embeddings (reuse or generate)
+            # Step-4: prepare embeddings
             (
                 all_chunks_with_embeddings,
                 chunks_needing_new_embeddings,
@@ -101,22 +101,20 @@ class CodebaseIndexingUseCase:
                 codebase_path_hash, chunk_objects
             )
 
-            # Step 5: Store all chunks in codebase MongoDB collection (without embeddings)
+            # Step-5: store in mongodb
             mongodb_result = {"inserted": 0, "updated": 0}
             if all_chunks_with_embeddings:
                 mongodb_result = await self.codebase_indexing_service.store_chunks_in_mongodb(
                     codebase_path_hash, all_chunks_with_embeddings
                 )
 
-            # Step 6: Prepare all chunks for Pinecone upsert
+            # Step 6: pinecone upsertion
             all_chunks_for_pinecone = all_chunks_with_embeddings
 
-            # Determine git branch for namespace (use first chunk's git_branch)
             git_branch = "default"
             if chunk_objects:
                 git_branch = chunk_objects[0].git_branch or "default"
 
-            # Step 7: Upsert all chunks to Pinecone
             pinecone_result = {"upserted_count": 0, "batches_processed": 0}
 
             codebase_path_hash_special_hash = calculate_special_hash(codebase_path_name)
@@ -126,10 +124,8 @@ class CodebaseIndexingUseCase:
                     pinecone_index_name, all_chunks_for_pinecone, git_branch
                 )
 
-            # Calculate processing time
             processing_time = time.time() - start_time
 
-            # Calculate total deletion count
             total_deleted_chunks = deleted_files_count + deleted_chunks_count
             total_pinecone_deleted = (
                 pinecone_deleted_files_count + pinecone_deleted_chunks_count
@@ -167,7 +163,6 @@ class CodebaseIndexingUseCase:
             return response
 
         except HTTPException:
-            # Re-raise HTTP exceptions as they have proper status codes
             raise
         except Exception as e:
             loggers["main"].error(
