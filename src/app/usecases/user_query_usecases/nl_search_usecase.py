@@ -58,7 +58,6 @@ class NLSearchUsecase:
         query_specific_nl_context = await self.query_specific_nl_search(data)
 
         ds = get_absolute_path(relative_path=query_specific_nl_context.get("directory", data["codebase_path"]), codebase_path=data["codebase_path"])
-        print(f"ds: {ds}")
         directory_structure = await self.get_directory_structure(codebase_path=ds, depth=5)
         with open("intermediate_outputs/nl_search_outputs/llm_given_directory_structure.txt", "w", encoding="utf-8") as f:
             f.write(directory_structure)

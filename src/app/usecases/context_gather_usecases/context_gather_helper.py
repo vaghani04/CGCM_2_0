@@ -15,7 +15,7 @@ from src.app.usecases.context_gather_usecases.repo_map_graphdb_usecase import Re
 from src.app.utils.path_utils import get_relative_paths
 from src.app.usecases.context_gather_usecases.extract_nl_context_usecase import ExtractNLContextUseCase
 from src.app.utils.tracing_context_utils import context_variable_git_branch_name
-
+from src.app.utils.logging_util import loggers
 
 class ContextGatherHelper:
     def __init__(self,
@@ -68,7 +68,7 @@ class ContextGatherHelper:
             return combined_result
             
         except Exception as e:
-            print(f"Error in generate_repo_map: {e}")
+            loggers["main"].error(f"Error in generate_repo_map: {e}")
             raise e
 
     async def get_current_branch_name(self, codebase_path: str) -> str | None:
@@ -84,7 +84,6 @@ class ContextGatherHelper:
         
         # Check if it's a git repository
         if not self.path_validation_service.validate_git_repository(codebase_path):
-            # Set default branch name in context variable
             context_variable_git_branch_name.set("default")
             return "default"
 
@@ -96,8 +95,7 @@ class ContextGatherHelper:
                 stderr=subprocess.PIPE,
             )
             current_git_branch = result.stdout.decode("utf-8").strip()
-            
-            # Set the git branch name in context variable
+
             context_variable_git_branch_name.set(current_git_branch)
             
             return current_git_branch
@@ -194,7 +192,7 @@ class ContextGatherHelper:
         }
 
         # Run both operations in parallel since they are independent
-        print("🚀 Starting parallel execution of codebase indexing and repo map generation...")
+        loggers["main"].info("🚀 Starting parallel execution of codebase indexing and repo map generation...")
         
         # Create tasks for parallel execution
         indexing_task = asyncio.create_task(
@@ -219,11 +217,11 @@ class ContextGatherHelper:
             
             # Handle any exceptions
             if isinstance(indexing_result, Exception):
-                print(f"❌ Codebase indexing failed: {indexing_result}")
+                loggers["main"].error(f"❌ Codebase indexing failed: {indexing_result}")
                 raise indexing_result
                 
             if isinstance(repo_map_result, Exception):
-                print(f"❌ Repo map generation failed: {repo_map_result}")
+                loggers["main"].error(f"❌ Repo map generation failed: {repo_map_result}")
                 raise repo_map_result
             
             # Store the current merkle tree
@@ -237,5 +235,5 @@ class ContextGatherHelper:
             return combined_result
             
         except Exception as e:
-            print(f"❌ Error during parallel execution: {e}")
+            loggers["main"].error(f"❌ Error during parallel execution: {e}")
             raise e

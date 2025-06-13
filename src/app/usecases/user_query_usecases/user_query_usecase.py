@@ -3,6 +3,7 @@ from src.app.usecases.user_query_usecases.user_query_helper import UserQueryHelp
 from typing import Dict, Any
 import asyncio
 import time
+from src.app.utils.logging_util import loggers
 
 class UserQueryUseCase:
     def __init__(self,
@@ -79,7 +80,7 @@ class UserQueryUseCase:
 
             # Always include NL context
             final_response["nl_context"] = nl_context
-            print(f"✓ NL context: {len(nl_context) if isinstance(nl_context, list) else 'included'}")
+            loggers["main"].info(f"✓ NL context: {len(nl_context) if isinstance(nl_context, list) else 'included'}")
             
             # Check if both rag_context and repo_map_context are empty
             rag_empty = final_response.get("rag_context", []) == [] 

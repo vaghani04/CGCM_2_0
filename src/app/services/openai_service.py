@@ -7,7 +7,7 @@ from fastapi import Depends, HTTPException
 from src.app.config.settings import settings
 from src.app.repositories.llm_usage_repository import LLMUsageRepository
 from src.app.services.api_service import ApiService
-# from src.app.services.llm_tracing_service import llm_tracing
+from src.app.utils.logging_util import loggers
 
 
 class OpenAIService:
@@ -22,7 +22,6 @@ class OpenAIService:
         self.openai_model = settings.OPENAI_MODEL
         self.llm_usage_repository = llm_usage_repository
 
-    # @llm_tracing(provider="openai")
     async def _completions(
         self,
         user_prompt: str,
@@ -166,7 +165,7 @@ class OpenAIService:
                     except json.JSONDecodeError:
                         continue
                     except Exception as e:
-                        print(f"Error processing OpenAI stream event: {str(e)}")
+                        loggers["main"].error(f"Error processing OpenAI stream event: {str(e)}")
                         continue
 
             # Log usage at the end

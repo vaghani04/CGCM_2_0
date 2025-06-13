@@ -127,7 +127,6 @@ class CodebaseIndexingService:
         """Process a batch of content for embeddings"""
         async with self.semaphore:
             try:
-                # print("reached here to create dummy embeddings")
                 # import random
                 # embeddings = []
                 # for content in contents:

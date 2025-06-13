@@ -62,4 +62,6 @@ loggers = {
     "main": setup_logger("main_service", "main_service.log"),
     "pinecone": setup_logger("pinecone_service", "pinecone_service.log"),
     "voyageai": setup_logger("voyageai_service", "voyageai_service.log"),
+    "time_tracker": setup_logger("time_tracker", "time_tracker.log"),
+    "requests": setup_logger("requests", "requests.log"),
 }

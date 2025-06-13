@@ -1,6 +1,7 @@
 import json
 import re
 from typing import Any
+from src.app.utils.logging_util import loggers
 
 
 def parse_response(response) -> Any:
@@ -30,7 +31,7 @@ def parse_response(response) -> Any:
                 response_data = json.loads(preprocessed_json)
                 return response_data
             except json.JSONDecodeError as e2:
-                print(
+                loggers["main"].error(
                     "Failed to decode JSON with both methods:",
                     e2,
                     "response data:",
@@ -43,7 +44,7 @@ def parse_response(response) -> Any:
                     response_data = json.loads(cleaned_json)
                     return response_data
                 except Exception as e3:
-                    print("All JSON parsing attempts failed:", e3)
+                    loggers["main"].error("All JSON parsing attempts failed:", e3)
                     # Return a partial parsed response with available fields
                     return extract_partial_json(json_str)
     else:
@@ -57,7 +58,7 @@ def parse_response(response) -> Any:
             try:
                 return extract_partial_json(response_str)
             except Exception as e:
-                print("No valid JSON found in the response:", e)
+                loggers["main"].error("No valid JSON found in the response:", e)
                 return None
 
 

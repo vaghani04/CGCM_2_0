@@ -13,6 +13,7 @@ from src.app.prompts.grep_search_command_making_prompt import (
 )
 from src.app.utils.response_parser import parse_response
 from src.app.utils.codebase_overview_utils import get_directory_structure
+from src.app.utils.logging_util import loggers
 
 class GrepSearchUsecase:
     def __init__(
@@ -36,17 +37,17 @@ class GrepSearchUsecase:
             codebase_path = user_query_data["codebase_path"]
             
             # Step 1: Get directory structure
-            print(f"Getting directory structure for {codebase_path}")
+            loggers["main"].info(f"Getting directory structure for {codebase_path}")
             directory_structure = await get_directory_structure(codebase_path, depth=5)
             with open("intermediate_outputs/grep_search_outputs/directory_structure.txt", "w") as f:
                 f.write(directory_structure)
             
             # Step 2: Generate grep commands using LLM
-            print(f"Generating grep commands for: {query}")
+            loggers["main"].info(f"Generating grep commands for: {query}")
             grep_commands = await self._generate_grep_commands(query, directory_structure)
             
             # Step 3: Execute the generated grep commands
-            print(f"Executing {len(grep_commands)} grep commands")
+            loggers["main"].info(f"Executing {len(grep_commands)} grep commands")
             search_results = await self._execute_grep_commands(grep_commands, codebase_path)
             
             # Step 4: Format and return results
@@ -56,7 +57,7 @@ class GrepSearchUsecase:
             
         except Exception as e:
             error_message = f"Error executing grep search: {str(e)}"
-            print(error_message)
+            loggers["main"].error(error_message)
             return f"Failed to execute grep search. Error: {str(e)}"
     
     async def _generate_grep_commands(self, query: str, directory_structure: str) -> List[Dict[str, Any]]:
@@ -91,7 +92,7 @@ class GrepSearchUsecase:
         
         # Validate the parsed response
         if not isinstance(parsed_response, dict):
-            print(f"Warning: Expected dict response, got {type(parsed_response)}")
+            loggers["main"].warning(f"Warning: Expected dict response, got {type(parsed_response)}")
             return []
         
         # Extract commands from the response
@@ -126,7 +127,7 @@ class GrepSearchUsecase:
         all_results = []
         
         for i, command in enumerate(commands):
-            print(f"Executing command {i+1}/{len(commands)}: {command['description']}")
+            loggers["main"].info(f"Executing command {i+1}/{len(commands)}: {command['description']}")
             
             # Create a request object for the existing execute_grep_search method
             grep_request = {

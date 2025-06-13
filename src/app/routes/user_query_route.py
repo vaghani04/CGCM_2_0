@@ -22,8 +22,7 @@ async def user_query_route(
 ):
     start_time = time.time()
     print(f"API request started at: {start_time}")
-    print(f"Processing query: '{user_query.query}' for codebase: '{user_query.codebase_path}'")
-
+    
     response_data = await user_query_controller.user_query(user_query)
 
     status_message = "User Query Successfully!"

@@ -4,6 +4,7 @@ import json
 from src.app.models.domain.graphdb_models import GraphQuery, GraphQueryResult
 from src.app.services.neo4j_service import Neo4jService
 from fastapi import Depends
+from src.app.utils.logging_util import loggers
 
 class GraphDBQueryService:
     """Service to execute Cypher queries against the Neo4j database."""
@@ -31,7 +32,7 @@ class GraphDBQueryService:
             result = await self.neo4j_service.execute_query(query)
             return result.records
         except Exception as e:
-            print(f"Error executing Cypher query: {e}")
+            loggers["main"].error(f"Error executing Cypher query: {e}")
             return []
     
     async def get_function_info(self, function_name: str, limit: int = 10) -> List[Dict[str, Any]]:

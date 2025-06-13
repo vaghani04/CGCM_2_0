@@ -25,7 +25,6 @@ class ContextGatherUseCase:
         
         # Get git branch name
         git_branch_name = await self.context_gather_helper.get_current_branch_name(codebase_path)
-        # return git_branch_name
 
         stats = await self.context_gather_helper.chunking_and_storage(codebase_path, git_branch_name)
         stats["git_branch_name"] = git_branch_name

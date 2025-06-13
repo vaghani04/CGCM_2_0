@@ -10,7 +10,7 @@ from src.app.models.domain.graphdb_models import (
     BatchOperation, GraphIndexRequest, GraphConstraintRequest,
     NodeType, RelationshipType
 )
-
+from src.app.utils.logging_util import loggers
 
 class Neo4jService:
     """Service for Neo4j graph database operations."""
@@ -168,7 +168,7 @@ class Neo4jService:
                 node_id = await self.create_node(node)
                 node_ids.append(node_id)
             except Exception as e:
-                print(f"Failed to create node: {e}")
+                loggers["main"].error(f"Failed to create node: {e}")
                 node_ids.append(None)
         return node_ids
     
@@ -225,7 +225,7 @@ class Neo4jService:
                 success = await self.create_relationship(rel)
                 results.append(success)
             except Exception as e:
-                print(f"Failed to create relationship: {e}")
+                loggers["main"].error(f"Failed to create relationship: {e}")
                 results.append(False)
         return results
     
@@ -239,7 +239,7 @@ class Neo4jService:
             await self.execute_query(query)
             return True
         except Exception as e:
-            print(f"Failed to clear database: {e}")
+            loggers["main"].error(f"Failed to clear database: {e}")
             return False
     
     async def create_indexes(self, indexes: List[GraphIndexRequest]) -> List[bool]:
@@ -259,7 +259,7 @@ class Neo4jService:
                 await self.execute_query(query)
                 results.append(True)
             except Exception as e:
-                print(f"Failed to create index: {e}")
+                loggers["main"].error(f"Failed to create index: {e}")
                 results.append(False)
         
         return results
@@ -292,11 +292,11 @@ class Neo4jService:
                                         await self.execute_query(GraphQuery(
                                             cypher_query=f"DROP INDEX {index_name}"
                                         ))
-                                        print(f"Dropped existing index: {index_name}")
+                                        loggers["main"].info(f"Dropped existing index: {index_name}")
                                     except Exception as drop_err:
-                                        print(f"Error dropping index {index_name}: {drop_err}")
+                                        loggers["main"].error(f"Error dropping index {index_name}: {drop_err}")
                         except Exception as idx_err:
-                            print(f"Error checking indexes: {idx_err}")
+                            loggers["main"].error(f"Error checking indexes: {idx_err}")
                     
                     # Now create the constraint
                     properties = ", ".join([f"n.{prop}" for prop in constraint_req.property_names])
@@ -316,7 +316,7 @@ class Neo4jService:
                         results.append(True)
                     except Exception as create_err:
                         # If the constraint creation fails, try creating just an index
-                        print(f"Constraint creation failed, falling back to index: {create_err}")
+                        loggers["main"].error(f"Constraint creation failed, falling back to index: {create_err}")
                         for prop in constraint_req.property_names:
                             index_query = GraphQuery(
                                 cypher_query=f"""
@@ -328,13 +328,13 @@ class Neo4jService:
                             try:
                                 await self.execute_query(index_query)
                             except Exception as idx_create_err:
-                                print(f"Failed to create fallback index: {idx_create_err}")
+                                loggers["main"].error(f"Failed to create fallback index: {idx_create_err}")
                         results.append(False)
                 else:
-                    print(f"Unsupported constraint type: {constraint_req.constraint_type}")
+                    loggers["main"].error(f"Unsupported constraint type: {constraint_req.constraint_type}")
                     results.append(False)
             except Exception as e:
-                print(f"Failed to create constraint: {e}")
+                loggers["main"].error(f"Failed to create constraint: {e}")
                 results.append(False)
         
         return results
@@ -393,7 +393,7 @@ class Neo4jService:
                 result = await self.execute_query(query)
                 stats[stat_name] = result.records
             except Exception as e:
-                print(f"Failed to get {stat_name}: {e}")
+                loggers["main"].error(f"Failed to get {stat_name}: {e}")
                 stats[stat_name] = []
         
         return stats 

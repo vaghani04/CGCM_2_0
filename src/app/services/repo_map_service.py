@@ -13,7 +13,7 @@ from src.app.models.domain.repo_map_models import (
     RepositoryMap, FileInfo, FunctionInfo, ClassInfo, ImportInfo, SummaryStats,
     LanguageType, FunctionVisibility
 )
-
+from src.app.utils.logging_util import loggers
 
 class RepositoryMapService:
     """Service for generating comprehensive repository maps."""
@@ -50,7 +50,7 @@ class RepositoryMapService:
                 if file_info:
                     analyzed_files.append(file_info)
             except Exception as e:
-                print(f"Warning: Failed to analyze {file_path}: {e}")
+                loggers["main"].error(f"Warning: Failed to analyze {file_path}: {e}")
                 continue
         
         # Generate directory structure
@@ -127,7 +127,7 @@ class RepositoryMapService:
         try:
             # Check if file exists first
             if not file_path.exists():
-                print(f"Warning: File does not exist: {file_path}")
+                loggers["main"].error(f"Warning: File does not exist: {file_path}")
                 return None
                 
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
@@ -152,16 +152,16 @@ class RepositoryMapService:
                 )
         
         except FileNotFoundError as e:
-            print(f"Warning: File not found: {file_path} - {e}")
+            loggers["main"].error(f"Warning: File not found: {file_path} - {e}")
             return None
         except PermissionError as e:
-            print(f"Warning: Permission denied: {file_path} - {e}")
+            loggers["main"].error(f"Warning: Permission denied: {file_path} - {e}")
             return None
         except UnicodeDecodeError as e:
-            print(f"Warning: Unicode decode error in file {file_path}: {e}")
+            loggers["main"].error(f"Warning: Unicode decode error in file {file_path}: {e}")
             return None
         except Exception as e:
-            print(f"Warning: Error analyzing file {file_path}: {type(e).__name__}: {e}")
+            loggers["main"].error(f"Warning: Error analyzing file {file_path}: {type(e).__name__}: {e}")
             return None
     
     async def _analyze_python_file(self, file_path: str, content: str) -> FileInfo:
@@ -188,7 +188,7 @@ class RepositoryMapService:
             )
         
         except SyntaxError as e:
-            print(f"Syntax error in Python file {file_path}: {e}")
+            loggers["main"].error(f"Syntax error in Python file {file_path}: {e}")
             return FileInfo(
                 path=file_path,
                 language=LanguageType.PYTHON,

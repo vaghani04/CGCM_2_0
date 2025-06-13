@@ -5,7 +5,7 @@ from typing import List, Dict
 from fastapi import Depends
 from chonkie import CodeChunker, RecursiveChunker
 from src.app.utils.hash_calculator import calculate_hash
-
+from src.app.utils.logging_util import loggers
 class CodeChunkingService:
     def __init__(self):
         # Initialize the CodeChunker with appropriate parameters
@@ -188,5 +188,5 @@ class CodeChunkingService:
             return result_chunks
         except Exception as e:
             # Log error and continue
-            print(f"Error chunking file {file_path}: {str(e)}")
+            loggers["main"].error(f"Error chunking file {file_path}: {str(e)}")
             return []

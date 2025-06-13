@@ -18,7 +18,7 @@ from src.app.prompts.rag_search_query_making_prompts import IS_RAG_SEARCH_REQUIR
 from src.app.services.openai_service import OpenAIService
 from src.app.utils.response_parser import parse_response
 from src.app.utils.codebase_overview_utils import get_directory_structure
-
+from src.app.utils.logging_util import loggers
 
 class RAGRetrievalUsecase:
     def __init__(
@@ -162,10 +162,10 @@ class RAGRetrievalUsecase:
             return retrieved_docs
             
         except Exception as e:
-            print(f"Error during RAG execution: {e}")
+            loggers["main"].error(f"Error during RAG execution: {e}")
             end_time = time.time()
             processing_time = end_time - start_time
-            print(f"Processing time before error: {processing_time:.2f} seconds")
+            loggers["main"].info(f"Processing time before error: {processing_time:.2f} seconds")
             raise e
 
     async def is_rag_required(self, query: str, codebase_path: str):

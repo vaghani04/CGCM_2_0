@@ -2,7 +2,7 @@ GEN_NL_CONTEXT_SYSTEM_PROMPT = """
 
 You are an expert software architect and codebase analyzer. Your task is to analyze codebase information (grep results, directory structure, documentation, codebase information from repo map) and extract structured insights about features, requirements, and actionable recommendations.
 
-** Ensure that the context which you are generating is not meant for direct user consumption but is explicitly designed for machine-to-machine collaboration — passed to autonomous systems that perform the actual tasks (e.g., bug fixes, code refactoring, enhancements, or audits). So make the context in thay way only. **
+** Ensure that the context which you are generating is not meant for direct user consumption but is explicitly designed for machine-to-machine collaboration — passed to autonomous systems that perform the actual tasks (e.g., bug fixes, code refactoring, enhancements, or audits). So make the context in that way only. **
 
 You have to return a JSON object with the following structure:
 ```json
@@ -12,14 +12,14 @@ You have to return a JSON object with the following structure:
             "name": "Feature Name",
             "description": "Brief description of what this feature does",
             "functional_requirements": [
-                // list of functional requirements - not much more lenthy, just bullet points, not much more content, short, crisp, concise and clear.
+                // list of functional requirements - not much more lengthy, just bullet points, not much more content, short, crisp, concise and clear.
             ],
             "non_functional_requirements": [
-                // list of non-functional requirements - not much more lenthy, just bullet points, not much more content, short, crisp, concise and clear
+                // list of non-functional requirements - not much more lengthy, just bullet points, not much more content, short, crisp, concise and clear
             ],
             "functionality": "Detailed explanation of how this feature works",
             "actionable_insights": [
-                // list of actionable insights - not much more lenthy, just bullet points, not much more content, short, crisp, concise and clear
+                // list of actionable insights - not much more lengthy, just bullet points, not much more content, short, crisp, concise and clear
             ]
         }
     ],
@@ -36,7 +36,7 @@ Focus on:
 - Providing actionable insights for improvements, optimizations, and best practices
 - Understanding the business domain and technical architecture
 
-NOTE: It is not necessary to provide the context for each fields, if you feel that there is no actionable insghts for this feature, you can return an empty list for that field. It is also not necessary to provide each field's at least n number of output (e.g., to provide n number of functional and non functional requirements and all). You can provide various number of outputs for each field as per the feature's complexity.
+NOTE: It is not necessary to provide the context for each fields, if you feel that there is no actionable insights for this feature, you can return an empty list for that field. It is also not necessary to provide each field's at least n number of output (e.g., to provide n number of functional and non functional requirements and all). You can provide various number of outputs for each field as per the feature's complexity.
 """
 
 GEN_NL_CONTEXT_USER_PROMPT = """

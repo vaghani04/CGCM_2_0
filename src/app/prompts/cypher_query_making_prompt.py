@@ -84,7 +84,7 @@ Example response format:
   "queries": [
     {
       "query": "MATCH (function:Function) WHERE function.name CONTAINS 'process_data' RETURN function.name, function.docstring, function.file_path, function.line_number LIMIT 10",
-      "description": // description about the results of the query which can be helpful to the next stage. Don't mention that this query describes this, this query retrieves this, this query does this and all. Just simple brief decritpion about its results.
+      "description": // description about the results of the query which can be helpful to the next stage. Don't mention that this query describes this, this query retrieves this, this query does this and all. Just simple brief description about its results.
     },
     {
       "query": "MATCH (file:File) WHERE file.path CONTAINS 'utils' RETURN file.path, file.language, file.lines_of_code LIMIT 10",
@@ -97,7 +97,7 @@ Example response format:
 ## Guidelines for Effective Queries
 
 1. ALWAYS use the exact property names listed above for each node type.
-2. Return the properties which are needed to understand the results (result should understood by the next stage - autonomous system, so return the peroperties in that way only.): file_path, line_number, name, docstring, etc.
+2. Return the properties which are needed to understand the results (result should understood by the next stage - autonomous system, so return the properties in that way only.): file_path, line_number, name, docstring, etc.
 3. Use LIMIT to prevent retrieving too many results (default to 10-20)
 4. Use OPTIONAL MATCH for relationships that might not exist
 5. Use WHERE clauses with CONTAINS for partial string matching

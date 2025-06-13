@@ -8,7 +8,7 @@ from src.app.config.database import mongodb_database
 from src.app.middlewares.path_validation_middleware import PathValidationMiddleware
 from src.app.routes import context_gather_route
 from src.app.routes import user_query_route
-
+from src.app.utils.logging_util import loggers
 
 @asynccontextmanager
 async def db_lifespan(app: FastAPI):
@@ -24,15 +24,15 @@ app = FastAPI(title="My FastAPI Application", lifespan=db_lifespan)
 # Add middleware to log all requests
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    print(f"\n🌐 Incoming request:")
-    print(f"   Method: {request.method}")
-    print(f"   URL: {request.url}")
-    print(f"   Client: {request.client}")
-    print(f"   Headers: {dict(request.headers)}")
-    
     response = await call_next(request)
     
-    print(f"   📨 Response: {response.status_code}")
+    loggers["main"].info(
+        f"🌐 Request: {request.method} {request.url} | "
+        f"Client: {request.client} | "
+        f"Response: {response.status_code} | "
+        f"Headers: {dict(request.headers)}"
+    )
+    
     return response
 
 # Add CORS middleware to handle browser preflight requests

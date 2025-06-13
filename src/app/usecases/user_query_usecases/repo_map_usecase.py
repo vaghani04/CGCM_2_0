@@ -6,7 +6,7 @@ from src.app.prompts.cypher_query_making_prompt import CYPHER_QUERY_MAKING_USER_
 from src.app.services.openai_service import OpenAIService
 from src.app.services.graphdb_query_service import GraphDBQueryService
 from src.app.utils.response_parser import parse_response
-
+from src.app.utils.logging_util import loggers
 class RepoMapUsecase:
     def __init__(self,
                  graphdb_query_service: GraphDBQueryService = Depends(GraphDBQueryService),
@@ -40,7 +40,7 @@ class RepoMapUsecase:
                 
             return "\n".join(structure_parts)
         except Exception as e:
-            print(f"Error getting project structure: {e}")
+            loggers["main"].error(f"Error getting project structure: {e}")
             return "Project structure information unavailable."
 
 
@@ -76,7 +76,7 @@ class RepoMapUsecase:
         
         # Validate the parsed response
         if not isinstance(parsed_response, dict):
-            print(f"Warning: Expected dict response, got {type(parsed_response)}")
+            loggers["main"].warning(f"Warning: Expected dict response, got {type(parsed_response)}")
             return []
         
         # Extract queries from the response
@@ -142,7 +142,7 @@ class RepoMapUsecase:
                     item["description"] = description
                 all_results.extend(result)
             except Exception as e:
-                print(f"Error executing query: {e}")
+                loggers["main"].error(f"Error executing query: {e}")
         
         return all_results
     

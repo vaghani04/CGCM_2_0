@@ -10,6 +10,7 @@ from src.app.prompts.nl_context_extraction_prompt import GEN_NL_CONTEXT_SYSTEM_P
 from src.app.utils.response_parser import parse_response
 from src.app.usecases.user_query_usecases.repo_map_usecase import RepoMapUsecase
 from src.app.config.test_queries import NL_CONTEXT_QUERIES
+from src.app.utils.logging_util import loggers
 class ExtractNLContextUseCase:
     def __init__(self,
                 codebase_info_extraction_service: CodebaseInfoExtractionService = Depends(CodebaseInfoExtractionService),
@@ -23,21 +24,21 @@ class ExtractNLContextUseCase:
         self.file_storage_service = file_storage_service
         self.graphdb_query_service = graphdb_query_service
         self.repo_map_usecase = repo_map_usecase
-    async def extract_nl_context_from_repo_map(self, codebase_path: str, git_branch_name: str) -> Dict[str, Any]:
+    async def extract_nl_context_from_repo_map(self) -> Dict[str, Any]:
         """
         Extract natural language context from codebase using repomap's cypher queries executions
         """
         try:
             nl_context_queries = NL_CONTEXT_QUERIES
             # Execute all queries in parallel
-            print(f"Executing {len(nl_context_queries)} cypher queries in parallel...")
+            loggers["main"].info(f"Executing {len(nl_context_queries)} cypher queries in parallel...")
             
             results = await self.repo_map_usecase._execute_queries_parallel(nl_context_queries)
 
             return results
             
         except Exception as e:
-            print(f"Error extracting NL context from repo map: {e}")
+            loggers["main"].error(f"Error extracting NL context from repo map: {e}")
             return {
                 "success": False,
                 "error": f"Error extracting NL context from repo map: {str(e)}",
@@ -57,9 +58,8 @@ class ExtractNLContextUseCase:
         """
         try:
 
-            print("Extracting codebase information...")
             codebase_info_task = self.codebase_info_extraction_service.extract_codebase_info(codebase_path, git_branch_name)
-            codebase_info_from_repo_map_task = self.extract_nl_context_from_repo_map(codebase_path, git_branch_name)
+            codebase_info_from_repo_map_task = self.extract_nl_context_from_repo_map()
 
             # Create Tasks from the coroutines so we can check their status
             task1 = asyncio.create_task(codebase_info_task)
@@ -83,13 +83,10 @@ class ExtractNLContextUseCase:
             # If we need new data, wait for second task
             codebase_info_from_repo_map = await task2
 
-            print("Analyzing codebase with LLM...")
             insights = await self._generate_insights_with_llm(codebase_path, codebase_info, codebase_info_from_repo_map)
 
-            print("Storing insights...")
             await self._store_insights(codebase_path, git_branch_name, insights)
 
-            print("Generating statistics...")
             stats = self._generate_statistics(insights, codebase_info)
 
             return stats

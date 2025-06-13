@@ -10,7 +10,7 @@ from src.app.models.domain.graphdb_models import (
     NodeType, RelationshipType
 )
 from src.app.models.domain.repo_map_models import RepositoryMap
-
+from src.app.utils.logging_util import loggers
 
 class GraphDBImportService:
     """Service for importing repository map data into GraphDB."""
@@ -30,7 +30,7 @@ class GraphDBImportService:
         
         # Create indexes and constraints first
         await self._setup_database_schema()
-        print("✓ Database schema setup complete")
+        loggers["main"].info("✓ Database schema setup complete")
         
         # Parse repository map
         if isinstance(repo_map_data, dict):
@@ -69,7 +69,7 @@ class GraphDBImportService:
         except Exception as e:
             error_msg = f"GraphDB import failed: {e}"
             import_stats["errors"].append(error_msg)
-            print(f"✗ {error_msg}")
+            loggers["main"].error(f"✗ {error_msg}")
             raise
         
         return import_stats
