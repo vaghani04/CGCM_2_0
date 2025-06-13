@@ -14,6 +14,10 @@ from src.app.services.re_ranking_service import (
 from src.app.config.settings import settings
 from src.app.repositories.chunking_repository import ChunkingRepository
 import asyncio
+from src.app.prompts.rag_search_query_making_prompts import IS_RAG_SEARCH_REQUIRED_SYSTEM_PROMPT, IS_RAG_SEARCH_REQUIRED_USER_PROMPT
+from src.app.services.openai_service import OpenAIService
+from src.app.utils.response_parser import parse_response
+from src.app.utils.codebase_overview_utils import get_directory_structure
 
 
 class RAGRetrievalUsecase:
@@ -23,6 +27,7 @@ class RAGRetrievalUsecase:
         pinecone_service: PineconeService = Depends(PineconeService),
         reranker_service: RerankerService = Depends(RerankerService),
         chunking_repository: ChunkingRepository = Depends(ChunkingRepository),
+        openai_service: OpenAIService = Depends(OpenAIService),
     ):
         self.embedding_service = embedding_service
         self.pinecone_service = pinecone_service
@@ -35,7 +40,7 @@ class RAGRetrievalUsecase:
         self.top_k = settings.RAG_TOP_K
         self.top_n = settings.RAG_TOP_N
         self.chunking_repository = chunking_repository
-
+        self.openai_service = openai_service
 
     async def fetch_docs_from_mongodb(self, doc_metadata: list[dict], current_git_branch: str, codebase_path_hash: str):
         tasks = []
@@ -142,15 +147,56 @@ class RAGRetrievalUsecase:
             json.dump(full_final_results, f, indent=2)
         return full_final_results
 
-    async def rag_retrieval(self, query: str, index_name: str, target_directories: list[str] = [], current_git_branch: str = "default", codebase_path_hash: str = ""):
+    async def rag_retrieval(self, query: str, index_name: str, target_directories: list[str] = [], current_git_branch: str = "default", codebase_path_hash: str = "", codebase_path: str = ""):
+        
+        rag_required = await self.is_rag_required(query, codebase_path)
+        
+        if not rag_required:
+            return [{"text": "No RAG required", "relevance_score": 0, "metadata": {"reason": "Query does not contain specific technical content suitable for RAG retrieval"}}]
+        
+        #TODO # here we will add the logic if the user query is too long chunk it with same technique and do the parallel rag retrieval
+
         start_time = time.time()
+        
+        # Execute single RAG query since RAG is required
+        print("Starting RAG retrieval...")
+        
+        try:
+            retrieved_docs = await self.perform_rag(query, index_name, target_directories, current_git_branch, codebase_path_hash)
+            
+            end_time = time.time()
+            processing_time = end_time - start_time
+            
+            print(f"✓ RAG retrieval completed")
+            print(f"Total RAG retrieval time: {processing_time:.2f} seconds")
+            print(f"Retrieved {len(retrieved_docs)} documents")
+            
+            return retrieved_docs
+            
+        except Exception as e:
+            print(f"Error during RAG execution: {e}")
+            end_time = time.time()
+            processing_time = end_time - start_time
+            print(f"⏱️  Processing time before error: {processing_time:.2f} seconds")
+            raise e
 
-        retrieved_docs = await self.perform_rag(query, index_name, target_directories, current_git_branch, codebase_path_hash)
+    async def is_rag_required(self, query: str, codebase_path: str):
+        
+        directory_structure = await get_directory_structure(codebase_path, depth=5)
+        with open("intermediate_outputs/rag_search_outputs/directory_structure.txt", "w") as f:
+            f.write(directory_structure)
 
-        # Step 3: Format and return the final response
-        end_time = time.time()
-        processing_time = end_time - start_time
+        user_prompt = IS_RAG_SEARCH_REQUIRED_USER_PROMPT.format(user_query=query, directory_structure=directory_structure)
 
-        print(f"RAG retrieval time: {processing_time} seconds")
+        response = await self.openai_service.completions(
+            system_prompt=IS_RAG_SEARCH_REQUIRED_SYSTEM_PROMPT,
+            user_prompt=user_prompt,
+        )
 
-        return retrieved_docs
+        parsed_response = parse_response(response)
+        with open("intermediate_outputs/rag_search_outputs/rag_decision_llm_response.json", "w") as f:
+            json.dump(parsed_response, f, indent=2)
+
+        rag_required = parsed_response.get("rag_required", False)
+
+        return rag_required

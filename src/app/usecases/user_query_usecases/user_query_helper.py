@@ -33,7 +33,6 @@ class UserQueryHelper:
         nl_context = await self.nl_search_usecase.nl_search(user_query_data)
         return nl_context
 
-
     async def context_from_rag(self, user_query_data: Dict[str, Any]) -> str:
         query = user_query_data["query"]
         codebase_path = user_query_data["codebase_path"]
@@ -44,7 +43,7 @@ class UserQueryHelper:
         codebase_dir_path = codebase_path.split('/')[-1]
         index_name = f"{codebase_dir_path.lower().replace('_', '-')}-{codebase_path_special_hash}"
 
-        context = await self.rag_retrieval_usecase.rag_retrieval(query, index_name, target_directories, current_git_branch, codebase_path_hash)
+        context = await self.rag_retrieval_usecase.rag_retrieval(query, index_name, target_directories, current_git_branch, codebase_path_hash, codebase_path)
         return context
 
 
