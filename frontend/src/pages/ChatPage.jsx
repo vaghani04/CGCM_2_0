@@ -3,6 +3,8 @@ import { Send, Loader, AlertCircle, RefreshCw, MessageSquare, Copy, ChevronDown,
 import { useApp } from '../context/AppContext';
 import { usePeriodicContextGather } from '../hooks/usePeriodicContextGather';
 import contextService from '../services/contextService';
+import JSONViewer from '../components/JSONViewer';
+import JSONPreview from '../components/JSONPreview';
 import styles from './ChatPage.module.css';
 
 const ChatPage = () => {
@@ -10,6 +12,10 @@ const ChatPage = () => {
   const [query, setQuery] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState(null);
+  const [jsonViewerOpen, setJsonViewerOpen] = useState(false);
+  const [jsonViewerData, setJsonViewerData] = useState(null);
+  const [jsonViewerTitle, setJsonViewerTitle] = useState('JSON Response');
+  const [selectedMessageForViewer, setSelectedMessageForViewer] = useState(null);
   const chatContainerRef = useRef(null);
   const inputRef = useRef(null);
   
@@ -18,10 +24,10 @@ const ChatPage = () => {
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
-    if (chatContainerRef.current) {
+    if (chatContainerRef.current && !jsonViewerOpen) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [state.chatHistory]);
+  }, [state.chatHistory, jsonViewerOpen]);
 
   // Focus input on mount
   useEffect(() => {
@@ -127,6 +133,8 @@ const ChatPage = () => {
 
   const clearChat = () => {
     actions.clearChatHistory();
+    // Close JSON viewer when clearing chat
+    closeJsonViewer();
   };
 
   const formatTimestamp = (timestamp) => {
@@ -134,6 +142,48 @@ const ChatPage = () => {
       hour: '2-digit', 
       minute: '2-digit' 
     });
+  };
+
+  // Enhanced JSON Viewer functions for split-screen experience
+  const openJsonViewer = (data, title = 'JSON Response', messageId = null) => {
+    setJsonViewerData(data);
+    setJsonViewerTitle(title);
+    setSelectedMessageForViewer(messageId);
+    setJsonViewerOpen(true);
+  };
+
+  const closeJsonViewer = () => {
+    setJsonViewerOpen(false);
+    setTimeout(() => {
+      setJsonViewerData(null);
+      setJsonViewerTitle('JSON Response');
+      setSelectedMessageForViewer(null);
+    }, 300); // Wait for animation to complete
+  };
+
+  // Handle clicking on any message to open in viewer
+  const handleMessageClick = (message) => {
+    if (message.type === 'user') return; // Don't open user messages in viewer
+    
+    let data, title;
+    
+    if (typeof message.content === 'string' && isValidJSON(message.content)) {
+      try {
+        data = JSON.parse(message.content);
+        title = `${message.type === 'assistant' ? 'Response' : 'Error'} - ${formatTimestamp(message.timestamp)}`;
+      } catch {
+        data = { content: message.content };
+        title = `${message.type === 'assistant' ? 'Response' : 'Error'} - ${formatTimestamp(message.timestamp)}`;
+      }
+    } else if (typeof message.content === 'object') {
+      data = message.content;
+      title = `${message.type === 'assistant' ? 'Response' : 'Error'} - ${formatTimestamp(message.timestamp)}`;
+    } else {
+      data = { content: message.content };
+      title = `${message.type === 'assistant' ? 'Response' : 'Error'} - ${formatTimestamp(message.timestamp)}`;
+    }
+    
+    openJsonViewer(data, title, message.id);
   };
 
   // Check if content is valid JSON
@@ -158,105 +208,9 @@ const ChatPage = () => {
     }
   };
 
-  // JSON syntax highlighting component
-  const JSONHighlighter = ({ data, isRoot = true }) => {
-    const [collapsed, setCollapsed] = useState({});
-    
-    const toggleCollapse = (path) => {
-      setCollapsed(prev => ({
-        ...prev,
-        [path]: !prev[path]
-      }));
-    };
-
-    const renderValue = (value, key, path = '') => {
-      const currentPath = path ? `${path}.${key}` : key;
-      
-      if (value === null) {
-        return <span className={styles.jsonNull}>null</span>;
-      }
-      
-      if (typeof value === 'boolean') {
-        return <span className={styles.jsonBoolean}>{value.toString()}</span>;
-      }
-      
-      if (typeof value === 'number') {
-        return <span className={styles.jsonNumber}>{value}</span>;
-      }
-      
-      if (typeof value === 'string') {
-        return <span className={styles.jsonString}>"{value}"</span>;
-      }
-      
-      if (Array.isArray(value)) {
-        const isCollapsed = collapsed[currentPath];
-        return (
-          <div className={styles.jsonArray}>
-            <button 
-              className={styles.jsonToggle}
-              onClick={() => toggleCollapse(currentPath)}
-            >
-              {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-              <span className={styles.jsonBracket}>[</span>
-              {isCollapsed && <span className={styles.jsonEllipsis}>...{value.length} items</span>}
-            </button>
-            {!isCollapsed && (
-              <div className={styles.jsonContent}>
-                {value.map((item, index) => (
-                  <div key={index} className={styles.jsonItem}>
-                    <span className={styles.jsonIndex}>{index}:</span>
-                    {renderValue(item, index, currentPath)}
-                    {index < value.length - 1 && <span className={styles.jsonComma}>,</span>}
-                  </div>
-                ))}
-              </div>
-            )}
-            {!isCollapsed && <span className={styles.jsonBracket}>]</span>}
-          </div>
-        );
-      }
-      
-      if (typeof value === 'object') {
-        const keys = Object.keys(value);
-        const isCollapsed = collapsed[currentPath];
-        return (
-          <div className={styles.jsonObject}>
-            <button 
-              className={styles.jsonToggle}
-              onClick={() => toggleCollapse(currentPath)}
-            >
-              {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-              <span className={styles.jsonBracket}>{"{"}</span>
-              {isCollapsed && <span className={styles.jsonEllipsis}>...{keys.length} keys</span>}
-            </button>
-            {!isCollapsed && (
-              <div className={styles.jsonContent}>
-                {keys.map((objKey, index) => (
-                  <div key={objKey} className={styles.jsonItem}>
-                    <span className={styles.jsonKey}>"{objKey}":</span>
-                    {renderValue(value[objKey], objKey, currentPath)}
-                    {index < keys.length - 1 && <span className={styles.jsonComma}>,</span>}
-                  </div>
-                ))}
-              </div>
-            )}
-            {!isCollapsed && <span className={styles.jsonBracket}>{"}"}</span>}
-          </div>
-        );
-      }
-      
-      return <span>{String(value)}</span>;
-    };
-
-    return (
-      <div className={styles.jsonHighlighter}>
-        {renderValue(data, 'root')}
-      </div>
-    );
-  };
-
   const renderMessage = (message) => {
-    const messageClass = `${styles.message} ${styles[`message${message.type.charAt(0).toUpperCase() + message.type.slice(1)}`]}`;
+    const isSelected = selectedMessageForViewer === message.id;
+    const messageClass = `${styles.message} ${styles[`message${message.type.charAt(0).toUpperCase() + message.type.slice(1)}`]} ${isSelected ? styles.messageSelected : ''}`;
     
     // Determine if content should be displayed as JSON
     let isJSONContent = false;
@@ -275,27 +229,29 @@ const ChatPage = () => {
       isJSONContent = true;
       parsedContent = message.content;
     }
-    
+
     return (
       <div key={message.id} className={messageClass}>
         <div className={styles.messageHeader}>
-          <span className={styles.messageType}>
-            {message.type === 'user' ? 'You' : 
-             message.type === 'assistant' ? 'CGCM Assistant' : 'Error'}
-          </span>
           <div className={styles.messageActions}>
-            <span className={styles.messageTime}>
-              {formatTimestamp(message.timestamp)}
-              {message.timeTaken && (
-                <span className={styles.timeTaken}>
-                  • {message.timeTaken}s
-                </span>
-              )}
+            <span className={styles.messageType}>
+              {message.type === 'user' ? 'You' : message.type === 'assistant' ? 'Assistant' : 'Error'}
             </span>
+            <span className={styles.messageTime}>{formatTimestamp(message.timestamp)}</span>
+            {message.timeTaken && (
+              <span className={styles.timeTaken}>
+                ({message.timeTaken.toFixed(2)}s)
+              </span>
+            )}
+          </div>
+          <div className={styles.messageActions}>
             <button
               className={styles.copyButton}
-              onClick={() => copyToClipboard(message.content, message.id)}
-              title="Copy to clipboard"
+              onClick={(e) => {
+                e.stopPropagation();
+                copyToClipboard(message.content, message.id);
+              }}
+              title="Copy message"
             >
               <Copy size={16} />
               {copiedMessageId === message.id && (
@@ -304,16 +260,21 @@ const ChatPage = () => {
             </button>
           </div>
         </div>
-        <div className={styles.messageContent}>
+        
+        <div 
+          className={styles.messageContent}
+          onClick={() => handleMessageClick(message)}
+          style={{ cursor: message.type !== 'user' ? 'pointer' : 'default' }}
+        >
           {isJSONContent ? (
-            <div className={styles.jsonResponse}>
-              <div className={styles.jsonHeader}>
-                <span className={styles.jsonLabel}>JSON Response</span>
-              </div>
-              <JSONHighlighter data={parsedContent} />
-            </div>
+            <JSONPreview 
+              data={parsedContent} 
+              onExpand={() => openJsonViewer(parsedContent, `${message.type === 'assistant' ? 'Response' : 'Error'} - ${formatTimestamp(message.timestamp)}`, message.id)}
+            />
           ) : (
-            <pre className={styles.messageText}>{message.content}</pre>
+            <div className={styles.messageText}>
+              {typeof message.content === 'string' ? message.content : JSON.stringify(message.content, null, 2)}
+            </div>
           )}
         </div>
       </div>
@@ -336,7 +297,7 @@ const ChatPage = () => {
 
   return (
     <div className={styles.chatPage}>
-      <div className={styles.chatPageContainer}>
+      <div className={`${styles.chatPageContainer} ${jsonViewerOpen ? styles.shifted : ''}`}>
         <div className={styles.chatHeader}>
           <div className={styles.headerInfo}>
             <MessageSquare className={styles.headerIcon} />
@@ -452,6 +413,14 @@ const ChatPage = () => {
           </div>
         )}
       </div>
+
+      {/* JSON Viewer Component */}
+      <JSONViewer 
+        data={jsonViewerData}
+        isOpen={jsonViewerOpen}
+        onClose={closeJsonViewer}
+        title={jsonViewerTitle}
+      />
     </div>
   );
 };

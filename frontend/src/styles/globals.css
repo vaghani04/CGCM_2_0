@@ -8,6 +8,7 @@
   --text-muted: #64748b;
   --border-color: #e2e8f0;
   --accent-primary: #3b82f6;
+  --accent-primary-rgb: 59, 130, 246;
   --accent-secondary: #1d4ed8;
   --success: #10b981;
   --warning: #f59e0b;
@@ -25,6 +26,7 @@
   --text-muted: #94a3b8;
   --border-color: #475569;
   --accent-primary: #60a5fa;
+  --accent-primary-rgb: 96, 165, 250;
   --accent-secondary: #3b82f6;
   --success: #34d399;
   --warning: #fbbf24;

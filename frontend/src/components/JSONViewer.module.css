@@ -1,0 +1,418 @@
+/* Backdrop removed for split-screen functionality */
+
+/* Main JSON Viewer Container - Top margin to clear navbar, flush right and bottom */
+.jsonViewer {
+  position: fixed;
+  top: 5rem;
+  right: -55%;
+  width: 52%;
+  height: calc(100vh - 5rem);
+  background: var(--bg-secondary);
+  border: none;
+  border-left: 3px solid var(--accent-primary);
+  box-shadow: -3px 0 6px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  overflow: hidden;
+}
+
+.jsonViewer.open {
+  right: 0;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  border-bottom: 2px solid var(--border-color);
+  background: var(--bg-primary);
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.copyButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--accent-primary);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.copyButton:hover {
+  background: var(--accent-secondary);
+  transform: translateY(-1px);
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background: var(--error);
+  color: white;
+  border-color: var(--error);
+}
+
+/* Content Area */
+.content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.jsonDisplay {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 2rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  background: var(--bg-secondary);
+}
+
+/* Custom scrollbar */
+.jsonDisplay::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.jsonDisplay::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+}
+
+.jsonDisplay::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 6px;
+}
+
+.jsonDisplay::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+.jsonDisplay::-webkit-scrollbar-corner {
+  background: var(--bg-tertiary);
+}
+
+/* JSON Styling */
+.jsonContainer {
+  margin: 0.25rem 0;
+}
+
+.jsonToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: background-color 0.2s ease;
+  margin-bottom: 0.25rem;
+}
+
+.jsonToggle:hover {
+  background: var(--bg-tertiary);
+}
+
+.jsonContent {
+  margin-left: 1rem;
+}
+
+.jsonItem {
+  margin: 0.25rem 0;
+  margin-left: 1rem;
+}
+
+.jsonKey {
+  color: var(--accent-primary);
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.jsonIndex {
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-right: 0.5rem;
+}
+
+.jsonString {
+  color: #22c55e;
+}
+
+.jsonNumber {
+  color: #3b82f6;
+}
+
+.jsonBoolean {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.jsonNull {
+  color: #ef4444;
+  font-style: italic;
+}
+
+.jsonBracket {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.jsonComma {
+  color: var(--text-secondary);
+}
+
+.jsonEllipsis {
+  color: var(--text-muted);
+  font-style: italic;
+  margin: 0 0.5rem;
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .jsonKey {
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .jsonString {
+  color: #34d399;
+}
+
+[data-theme="dark"] .jsonNumber {
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .jsonBoolean {
+  color: #fbbf24;
+}
+
+[data-theme="dark"] .jsonNull {
+  color: #f87171;
+}
+
+/* Light theme adjustments */
+[data-theme="light"] .jsonKey {
+  color: #1d4ed8;
+}
+
+[data-theme="light"] .jsonString {
+  color: #059669;
+}
+
+[data-theme="light"] .jsonNumber {
+  color: #1d4ed8;
+}
+
+[data-theme="light"] .jsonBoolean {
+  color: #d97706;
+}
+
+[data-theme="light"] .jsonNull {
+  color: #dc2626;
+}
+
+/* No data state */
+.noData {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Responsive Design - Canvas with navbar clearance */
+@media (max-width: 1400px) {
+  .jsonViewer {
+    width: 50%;
+    right: -50%;
+    top: 5rem;
+    height: calc(100vh - 5rem);
+  }
+  
+  .jsonViewer.open {
+    right: 0;
+  }
+}
+
+@media (max-width: 1200px) {
+  .jsonViewer {
+    width: 52%;
+    right: -52%;
+    top: 5rem;
+    height: calc(100vh - 5rem);
+  }
+  
+  .jsonViewer.open {
+    right: 0;
+  }
+}
+
+@media (max-width: 1000px) {
+  .jsonViewer {
+    width: 55%;
+    right: -55%;
+    top: 5rem;
+    height: calc(100vh - 5rem);
+  }
+
+  .header {
+    padding: 1.2rem 1.5rem;
+  }
+
+  .title {
+    font-size: 1.125rem;
+  }
+
+  .jsonDisplay {
+    padding: 1.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .jsonViewer.open {
+    right: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .jsonViewer {
+    width: 58%;
+    right: -58%;
+    top: 5rem;
+    height: calc(100vh - 5rem);
+  }
+
+  .header {
+    padding: 1rem;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .headerActions {
+    gap: 0.5rem;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .copyButton {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+  }
+
+  .jsonDisplay {
+    padding: 1rem;
+    font-size: 0.75rem;
+  }
+  
+  .jsonViewer.open {
+    right: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .jsonViewer {
+    width: 60%;
+    right: -60%;
+    top: 5rem;
+    height: calc(100vh - 5rem);
+  }
+  
+  .jsonViewer.open {
+    right: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .jsonViewer {
+    width: 63%;
+    right: -63%;
+    top: 5rem;
+    height: calc(100vh - 5rem);
+  }
+
+  .header {
+    padding: 0.75rem;
+  }
+
+  .title {
+    font-size: 1rem;
+  }
+
+  .copyButton span {
+    display: none;
+  }
+
+  .jsonDisplay {
+    padding: 0.75rem;
+  }
+  
+  .jsonViewer.open {
+    right: 0;
+  }
+}
+
+/* Animation for smooth transitions */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Focus management */
+.jsonToggle:focus {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.copyButton:focus,
+.closeButton:focus {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+} 
