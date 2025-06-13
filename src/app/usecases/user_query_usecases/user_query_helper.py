@@ -1,26 +1,22 @@
 import json
-import os
 from fastapi import Depends
-from src.app.services.context_assembly_service import ContextAssemblyService
 from src.app.usecases.user_query_usecases.repo_map_usecase import RepoMapUsecase
 from src.app.usecases.user_query_usecases.rag_retrieval_usecase import RAGRetrievalUsecase
 from typing import Dict, Any
 from src.app.utils.hash_calculator import calculate_special_hash, calculate_hash
 from src.app.usecases.context_gather_usecases.context_gather_helper import ContextGatherHelper
 from src.app.usecases.user_query_usecases.grep_search_usecase import GrepSearchUsecase
-from src.app.models.schemas.grep_search_query_schema import GrepSearchQueryRequest
 from src.app.usecases.user_query_usecases.nl_search_usecase import NLSearchUsecase
+from src.app.utils.codebase_overview_utils import get_directory_structure
 
 class UserQueryHelper:
     def __init__(self,
-                context_assembly_service: ContextAssemblyService = Depends(ContextAssemblyService),
                 repo_map_usecase: RepoMapUsecase = Depends(RepoMapUsecase),
                 rag_retrieval_usecase: RAGRetrievalUsecase = Depends(RAGRetrievalUsecase),
                 context_gather_helper: ContextGatherHelper = Depends(ContextGatherHelper),
                 grep_search_usecase: GrepSearchUsecase = Depends(GrepSearchUsecase),
                 nl_search_usecase: NLSearchUsecase = Depends(NLSearchUsecase),
     ):
-        self.context_assembly_service = context_assembly_service
         self.repo_map_usecase = repo_map_usecase
         self.rag_retrieval_usecase = rag_retrieval_usecase
         self.context_gather_helper = context_gather_helper
@@ -69,14 +65,14 @@ class UserQueryHelper:
             
             # Get project structure
             print(f"Getting directory structure for {codebase_path}")
-            project_structure = await self.repo_map_usecase.get_directory_structure(codebase_path, depth=5)
+            directory_structure = await get_directory_structure(codebase_path, depth=5)
 
-            with open("intermediate_outputs/repo_map_search_outputs/project_structure.txt", "w") as f:
-                f.write(project_structure)
+            with open("intermediate_outputs/repo_map_search_outputs/directory_structure.txt", "w") as f:
+                f.write(directory_structure)
             
             # Generate Cypher queries using LLM
             print(f"Generating Cypher queries for: {query}")
-            cypher_queries = await self.repo_map_usecase._generate_cypher_queries(query, project_structure)
+            cypher_queries = await self.repo_map_usecase._generate_cypher_queries(query, directory_structure)
 
             # Execute queries in parallel
             print(f"Executing {len(cypher_queries)} Cypher queries")
@@ -84,14 +80,6 @@ class UserQueryHelper:
             results = await self.repo_map_usecase._execute_queries_parallel(cypher_queries)
             with open("intermediate_outputs/repo_map_search_outputs/cypher_queries_execution_results.json", "w") as f:
                 json.dump(results, f)
-
-            # Assemble the final context
-            # print(f"Assembling context from {len(results)} results")
-            # context = await self.context_assembly_service.assemble_context(results, query)
-            
-            
-            # with open("intermediate_outputs/repo_map_search_outputs/repo_map_context.txt", "w") as f:
-            #     f.write(context)
 
             return results
             

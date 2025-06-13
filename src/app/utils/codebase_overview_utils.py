@@ -1,7 +1,6 @@
 from src.app.config.settings import settings
 from pathlib import Path
 import asyncio
-from typing import Dict, Any
 
 async def get_directory_structure(codebase_path: str, depth: int = 2) -> str:
     """

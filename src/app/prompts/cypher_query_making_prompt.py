@@ -114,7 +114,7 @@ CYPHER_QUERY_MAKING_USER_PROMPT = """
 User Query: {query}
 
 directory Structure:
-{project_structure}
+{directory_structure}
 
 Based on the user's query, generate appropriate Cypher queries to retrieve the relevant information from the repository graph database. Return the queries in JSON format as specified.
 

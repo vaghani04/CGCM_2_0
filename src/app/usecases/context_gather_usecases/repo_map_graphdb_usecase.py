@@ -1,4 +1,3 @@
-import json
 from typing import Dict, Any
 
 from src.app.services.repo_map_service import RepositoryMapService
@@ -44,18 +43,14 @@ class RepoMapGraphDBUseCase:
                 output_file=output_file
             )
             
-            print(f"✓ Repository map generated: {repo_map_result['total_files_analyzed']} files analyzed")
+            print(f"✓ Repository map generated successfully")
+            repo_map_data = repo_map_result["repo_map_data"]
             
-            # Step 3: Load the generated repository map
-            repo_map_file = repo_map_result["repository_map_file"]
-            with open(repo_map_file, 'r') as f:
-                repo_map_data = json.load(f)
-            
-            # Step 4: Import into GraphDB
+            # Step 3: Import into GraphDB
             print("📊 Importing repository map into GraphDB...")
             import_stats = await self.graphdb_import_service.import_repository_map(repo_map_data)
             
-            # Step 5: Get database statistics
+            # Step 4: Get database statistics
             db_stats = await self.graphdb_import_service.get_import_stats()
             
             # Combine results

@@ -1,15 +1,17 @@
 from fastapi import Depends
 from src.app.usecases.user_query_usecases.user_query_helper import UserQueryHelper
 from typing import Dict, Any
+import asyncio
+import time
+
 class UserQueryUseCase:
     def __init__(self,
-                user_query_helper: UserQueryHelper = Depends(UserQueryHelper)):
+                user_query_helper: UserQueryHelper = Depends(UserQueryHelper)
+            ):
         self.user_query_helper = user_query_helper
 
     async def execute(self, user_query: Dict[str, Any]):
-        import asyncio
-        import time
-        
+
         start_time = time.time()
         
         # Execute all 4 context gathering tasks in parallel
@@ -68,13 +70,13 @@ class UserQueryUseCase:
             # Build final response with conditional logic
             final_response = {}
             
+            # Always include repo_map_context and rag_context if they have data
+            final_response["rag_context"] = rag_context
+            final_response["repo_map_context"] = repo_map_context
+
             # Always include NL context
             final_response["nl_context"] = nl_context
             print(f"✓ NL context: {len(nl_context) if isinstance(nl_context, list) else 'included'}")
-            
-            # Always include repo_map_context and rag_context if they have data
-            final_response["repo_map_context"] = repo_map_context
-            final_response["rag_context"] = rag_context
             
             # Check if both rag_context and repo_map_context are empty
             rag_empty = not rag_context or (isinstance(rag_context, list) and len(rag_context) == 0)
@@ -85,7 +87,7 @@ class UserQueryUseCase:
                 final_response["grep_search_context"] = grep_search_context
                 print(f"✓ Grep search context included (RAG and repo_map empty): {len(grep_search_context) if isinstance(grep_search_context, list) else 'included'}")
             else:
-                print("ℹ️ Grep search context excluded (RAG or repo_map have data)")
+                print("Grep search context excluded (RAG or repo_map have data)")
             
             end_time = time.time()
             processing_time = end_time - start_time

@@ -125,7 +125,7 @@ class FileStorageService:
             if len(parts) != 2:
                 raise ValueError(f"Invalid key format: {key}")
                 
-            git_branch, workspace_path = parts
+            workspace_path, git_branch = parts
             
             # Get just the basename for the key
             workspace_basename = os.path.basename(workspace_path.rstrip('/'))

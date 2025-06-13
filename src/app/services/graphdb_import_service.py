@@ -51,23 +51,18 @@ class GraphDBImportService:
         try:
             # Step 1: Create directory structure
             await self._create_directory_structure(repo_map, import_stats)
-            print(f"✓ Created {import_stats['directories_created']} directories")
-            
+                        
             # Step 2: Create file nodes
             await self._create_file_nodes(repo_map, import_stats)
-            print(f"✓ Created {import_stats['files_created']} files")
             
             # Step 3: Create function and class nodes
             await self._create_code_entities(repo_map, import_stats)
-            print(f"✓ Created {import_stats['functions_created']} functions and {import_stats['classes_created']} classes")
             
             # Step 4: Create import nodes and relationships
             await self._create_import_relationships(repo_map, import_stats)
-            print(f"✓ Created {import_stats['imports_created']} imports")
             
             # Step 5: Create dependency relationships
             await self._create_dependency_relationships(repo_map, import_stats)
-            print(f"✓ Created dependency relationships")
             
             print("✓ GraphDB import completed successfully")
             

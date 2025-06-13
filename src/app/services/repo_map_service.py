@@ -89,7 +89,8 @@ class RepositoryMapService:
             "repository_map_file": output_file,
             "total_files_analyzed": len(analyzed_files),
             "processing_time_seconds": round(processing_time, 2),
-            "summary": summary_stats.to_dict()
+            "summary": summary_stats.to_dict(),
+            "repo_map_data": repo_map.to_dict()
         }
     
     def _find_supported_files(self, root_path: Path) -> List[str]:
