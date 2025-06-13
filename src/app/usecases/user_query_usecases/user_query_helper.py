@@ -57,11 +57,6 @@ class UserQueryHelper:
         try:
             query = user_query_data["query"]
             codebase_path = user_query_data["codebase_path"]
-
-            # graph_db_project_structure = await self.repo_map_usecase._get_project_structure()
-            # # return graph_db_project_structure
-            # with open("intermediate_outputs/graph_db_project_structure.txt", "w") as f:
-            #     f.write(graph_db_project_structure)
             
             # Get project structure
             print(f"Getting directory structure for {codebase_path}")
@@ -80,9 +75,6 @@ class UserQueryHelper:
             results = await self.repo_map_usecase._execute_queries_parallel(cypher_queries)
             with open("intermediate_outputs/repo_map_search_outputs/cypher_queries_execution_results.json", "w") as f:
                 json.dump(results, f)
-
-            # with open("intermediate_outputs/repo_map_search_outputs/cypher_queries_execution_results.json", "r") as f:
-            #     results = json.load(f)
 
             formatted_results = await self.repo_map_usecase.format_results(results)
             with open("intermediate_outputs/repo_map_search_outputs/formatted_results.json", "w") as f:
