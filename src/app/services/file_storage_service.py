@@ -240,3 +240,43 @@ class FileStorageService:
                 status_code=500,
                 detail=f"Error retrieving merkle tree from file: {str(e)}"
             )
+        
+    async def store_variable_in_file_storage(self, data: Dict, file_name: str, workspace_path: str):
+        """
+        Store variable in a JSON file
+        """
+        try:
+            workspace_dir = self._get_workspace_dir(workspace_path)
+            file_path = workspace_dir / f"{file_name}"
+            
+            # Always overwrite the file with new content
+            with open(file_path, 'w') as f:
+                json.dump(data, f, indent=2)
+                
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error storing variable in file: {str(e)}"
+            )
+        
+    async def get_variable_from_file_storage(self, file_name: str, workspace_path: str) -> Optional[Dict]:
+        """
+        Retrieve variable from a JSON file
+        """
+        try:
+            workspace_dir = self._get_workspace_dir(workspace_path)
+            file_path = workspace_dir / f"{file_name}"
+            
+            if not file_path.exists():  
+                return None
+            
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+
+            return data
+            
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error retrieving variable from file: {str(e)}"
+            )

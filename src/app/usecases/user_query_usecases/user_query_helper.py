@@ -81,7 +81,14 @@ class UserQueryHelper:
             with open("intermediate_outputs/repo_map_search_outputs/cypher_queries_execution_results.json", "w") as f:
                 json.dump(results, f)
 
-            return results
+            # with open("intermediate_outputs/repo_map_search_outputs/cypher_queries_execution_results.json", "r") as f:
+            #     results = json.load(f)
+
+            formatted_results = await self.repo_map_usecase.format_results(results)
+            with open("intermediate_outputs/repo_map_search_outputs/formatted_results.json", "w") as f:
+                json.dump(formatted_results, f)
+
+            return formatted_results
             
         except Exception as e:
             error_message = f"Error processing query: {str(e)}"

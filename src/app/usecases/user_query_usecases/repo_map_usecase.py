@@ -145,3 +145,56 @@ class RepoMapUsecase:
                 print(f"Error executing query: {e}")
         
         return all_results
+    
+
+    async def format_results(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Format the results of the Cypher queries.
+        Remove duplicates and group by description.
+        """
+        # Step 1: Remove duplicates
+        unique_results = []
+        seen_results = set()
+        
+        def make_hashable(item):
+            """Convert non-hashable types to hashable ones for comparison."""
+            if isinstance(item, dict):
+                return tuple(sorted((k, make_hashable(v)) for k, v in item.items()))
+            elif isinstance(item, list):
+                return tuple(make_hashable(x) for x in item)
+            elif isinstance(item, set):
+                return tuple(sorted(make_hashable(x) for x in item))
+            else:
+                return item
+        
+        for result in results:
+            # Create a hashable representation of the result (excluding description)
+            result_copy = result.copy()
+            description = result_copy.pop('description', '')
+            result_key = make_hashable(result_copy)
+            
+            if result_key not in seen_results:
+                seen_results.add(result_key)
+                unique_results.append(result)
+        
+        # Step 2: Group by description
+        grouped_results = {}
+        for result in unique_results:
+            description = result.get('description', 'No description')
+            
+            if description not in grouped_results:
+                grouped_results[description] = {
+                    'description': description,
+                    'results': []
+                }
+            
+            # Limit to maximum 5 results per description
+            if len(grouped_results[description]['results']) < 5:
+                # Remove description from individual result to avoid redundancy
+                result_without_desc = {k: v for k, v in result.items() if k != 'description'}
+                grouped_results[description]['results'].append(result_without_desc)
+        
+        # Convert to list format
+        formatted_results = list(grouped_results.values())
+        
+        return formatted_results[:5]

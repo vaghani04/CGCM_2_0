@@ -1,5 +1,4 @@
 import subprocess
-import hashlib
 import json
 import asyncio
 from fastapi import Depends, HTTPException, status
@@ -10,11 +9,13 @@ from src.app.services.code_chunking_service import CodeChunkingService
 from src.app.services.file_storage_service import FileStorageService
 from src.app.config.database import mongodb_database
 from src.app.usecases.context_gather_usecases.codebase_indexing_usecase import CodebaseIndexingUseCase
-from src.app.utils.hash_calculator import calculate_special_hash, calculate_hash
+from src.app.utils.hash_calculator import calculate_hash
 from src.app.services.repo_map_service import RepositoryMapService
 from src.app.usecases.context_gather_usecases.repo_map_graphdb_usecase import RepoMapGraphDBUseCase
 from src.app.utils.path_utils import get_relative_paths
 from src.app.usecases.context_gather_usecases.extract_nl_context_usecase import ExtractNLContextUseCase
+from src.app.utils.tracing_context_utils import context_variable_git_branch_name
+
 
 class ContextGatherHelper:
     def __init__(self,
@@ -53,6 +54,11 @@ class ContextGatherHelper:
                 codebase_path=codebase_path,
                 output_file="intermediate_outputs/repo_map_from_route.json"
             )
+            data = {
+                "current_codebase_path_should_be": codebase_path,
+                "current_git_branch_should_be": git_branch_name
+            }
+            await self.file_storage_service.store_variable_in_file_storage(data, "fetch_variables.json", codebase_path)
             print("✓ Repo map generation completed")
 
             nl_result = await self.extract_nl_context(codebase_path, git_branch_name)
@@ -78,6 +84,8 @@ class ContextGatherHelper:
         
         # Check if it's a git repository
         if not self.path_validation_service.validate_git_repository(codebase_path):
+            # Set default branch name in context variable
+            context_variable_git_branch_name.set("default")
             return "default"
 
         try:
@@ -87,8 +95,12 @@ class ContextGatherHelper:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-            git_branch_name = result.stdout.decode("utf-8").strip()
-            return git_branch_name
+            current_git_branch = result.stdout.decode("utf-8").strip()
+            
+            # Set the git branch name in context variable
+            context_variable_git_branch_name.set(current_git_branch)
+            
+            return current_git_branch
         
         except subprocess.CalledProcessError as e:
             error_message = e.stderr.decode("utf-8").strip()
@@ -127,9 +139,17 @@ class ContextGatherHelper:
             changed_files, deleted_files = self.merkle_tree_service.compare_merkle_trees(
                 previous_tree, current_tree, previous_file_hashes, current_file_hashes
             )
-
             if not changed_files and not deleted_files:
-                return stats
+                data = await self.file_storage_service.get_variable_from_file_storage("fetch_variables.json", codebase_path)
+                if git_branch_name == data.get("current_git_branch_should_be", "default ") and codebase_path == data.get("current_codebase_path_should_be", codebase_path):
+                    return stats
+                else:
+                    repo_map_results = await self.generate_repo_map(codebase_path, 
+                    git_branch_name)
+                    combined_result = {}
+                    combined_result["repo_map_result"] = repo_map_results["repo_map_result"]
+                    combined_result["nl_result"] = repo_map_results["nl_result"]
+                    return combined_result
             
             # Only process changed files
             files_to_process = [os.path.join(codebase_path, file_path) for file_path in changed_files]
