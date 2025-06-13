@@ -1,93 +1,201 @@
-# code-generation-context-management
+# Context Generation Context Management (CGCM) 2.0
+
+An intelligent **Context Management System** designed to analyze and maintain deep contextual understanding of large-scale codebases (300+ files). Built for autonomous developer systems, CGCM provides structured, up-to-date context for downstream AI tasks such as code modification, refactoring, and feature implementation.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [System Architecture](#system-architecture)
 
 
+## Overview
 
-## Getting started
+CGCM 2.0 addresses the critical challenge of maintaining contextual awareness in large, evolving codebases. Unlike traditional documentation tools, this system is designed for **machine-to-machine collaboration**, providing AI systems with the structured context they need to perform complex code operations.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+### Problem Solved
+- **Context Fragmentation**: Large codebases become difficult to understand and navigate
+- **Change Tracking**: Manual detection of code changes across hundreds of files
+- **AI Integration**: Lack of structured context for autonomous development tools
+- **Multi-language Support**: Managing context across Python, JavaScript, and TypeScript projects
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+### Key Differentiators
+- **Real-time Change Detection**: Uses merkle tree algorithms to efficiently detect file modifications  
+- **Multi-modal Context Sources**: Combines RAG retrieval, graph databases, and grep search
+- **Incremental Updates**: Only processes changed components, ensuring scalability
 
-## Add your files
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## Architecture
+
+CGCM 2.0 follows a **4-layer architecture** pattern:
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.dhiwise.com/internship_program_2025/personal-projects/code-generation-context-management.git
-git branch -M main
-git push -uf origin main
+Routes → Controllers → Use Cases → Services
 ```
 
-## Integrate with your tools
 
-- [ ] [Set up project integrations](https://gitlab.dhiwise.com/internship_program_2025/personal-projects/code-generation-context-management/-/settings/integrations)
+## Features
 
-## Collaborate with your team
+### Context Gathering
+- **Automatic Change Detection**: Monitors codebase using merkle tree hashing
+- **Smart Chunking**: Processes only modified files to maintain efficiency  
+- **Repository Mapping**: Creates comprehensive graph representations in Neo4j
+- **Vector Embeddings**: Generates contextual embeddings for semantic search
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+### Query & Retrieval
+- **Multi-source Context**: Combines graph queries, vector search, and text pattern matching
+- **LLM-Generated Queries**: Automatically creates Cypher queries based on user intent
+- **Fallback Mechanisms**: Ensures reliable results through layered search strategies
+- **Real-time Processing**: Provides immediate context for development workflows
 
-## Test and Deploy
+### User Interface
+- **React-based frontend** - Streamlined UI for context visualization
+- **Background Polling**: Real-time polling for codebase changes
+- **Chat Interface**: Interactive query interface
 
-Use the built-in continuous integration in GitLab.
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+## Prerequisites
 
-***
+Before installing CGCM 2.0, ensure you have the following installed:
 
-# Editing this README
+### Required Software
+- **Python 3.8+** with pip
+- **Node.js 16+** with npm
+- **Docker Desktop** (for database services)
+- **Git** for repository cloning
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+### Development Tools
+- **uv** (Python package manager) - Install via `curl -LsSf https://astral.sh/uv/install.sh | sh`
 
-## Suggestions for a good README
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+## Tech Stack
 
-## Name
-Choose a self-explaining name for your project.
+### Backend
+- **FastAPI** - High-performance async Python web framework
+- **Python 3.8+** - Core application logic
+- **Uvicorn** - ASGI server for production deployment
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+### Frontend  
+- **React** - Modern UI component library
+- **Vite** - Fast build tool and dev server
+- **Node.js** - JavaScript runtime environment
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+### Databases
+- **MongoDB** - Document storage for chunked code data
+- **Neo4j** - Graph database for repository relationships  
+- **Pinecone** - Vector database for semantic search
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+### AI & Processing
+- **Voyage AI** - Advanced embedding generation
+- **Chonkie** - Intelligent code chunking library
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+### Infrastructure
+- **Docker & Docker Compose** - Containerized deployment
+- **uv** - Fast Python package management
+
+## Quick Start
+
+Get CGCM 2.0 running in under 5 minutes:
+
+```bash
+# Clone the repository
+git clone https://github.com/vaghani04/CGCM_2_0.git
+cd CGCM_2_0
+
+# Start neo4j database service  
+docker-compose up -d
+
+# Setup Python environment
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
+
+# Start the backend
+uvicorn src.main:app --reload
+
+# In a new terminal, setup frontend
+cd frontend
+npm install
+npm run dev
+```
+
+Access the application at `http://localhost:5173`
+
+## Configuration
+
+### Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxx
+PINECONE_API_KEY=psc-xxxxxxxxxxxxxxx
+VOYAGEAI_API_KEY=pa-xxxxxxxxxxxxx
+```
+
 
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### 1. Context Gathering (Preprocessing)
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+Before querying your codebase, initialize the context gathering system:
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+```bash
+# Make a POST request to gather context from your codebase
+curl -X POST "http://localhost:8000/api/v1/context-gather" \
+  -H "Content-Type: application/json" \
+  -d '{"codebase_path": "/path/to/your/project"}'
+```
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+This process:
+- Scans the codebase for Python/JavaScript/TypeScript files
+- Creates chunks and generates embeddings  
+- Builds repository graph in Neo4j
+- Stores processed data for querying
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+### 2. Querying Context
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+Once preprocessing is complete, query your codebase:
 
-## License
-For open source projects, say how it is licensed.
+```bash
+# Query the context system
+curl --location 'http://localhost:8000/api/v1/user-query' \
+--header 'Content-Type: application/json' \
+--data '{
+  "query": "query to retrieve the context",
+  "codebase_path": "/path/to/your/project"
+}
+'
+```
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+### 3. Web Interface
+
+Navigate to `http://localhost:5173` to use the web interface:
+
+1. **Setup Phase**: Enter your codebase path to begin context gathering
+2. **Query Phase**: Ask questions about your codebase structure and functionality
+3. **Monitoring**: The system automatically polls for changes every 3 minutes
+
+
+
+## System Architecture
+
+![System Architecture Diagram](frontend/public/system_architecture.svg)
+
+### Data Flow
+
+1. **Preprocessing**: Codebase → Change Detection → Chunking → Embeddings → Storage
+2. **Query Processing**: User Query → Multi-source Retrieval → Context Assembly → Response
+3. **Continuous Monitoring**: Background polling → Change Detection → Incremental Updates
+
+---
+
+<div align="right">
+<strong>Built with ❤️ by Maunik Vaghani</strong>
+</div>
